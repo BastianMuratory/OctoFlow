@@ -1,0 +1,375 @@
+html, body {
+    height: 100%;
+}
+
+:root {
+    /* color system — easy to override for dark mode */
+    --bg: #F5E7C6;
+    --text: #222222;
+    --title: #222222;
+    --muted: #a39a85;
+    --card-bg: #FAF3E1;
+    --card-border: #ccc;
+    --primary: #007bff;
+    --primary-hover: #0069d9;
+    --danger: #d9534f;
+    --muted-btn: #a39a85;
+    --tooltip-bg: #FAF3E1;
+    --tooltip-text: #222222;
+    --modal-bg: #FAF3E1;
+}
+
+.dark-mode {
+    --bg: #1B3C53;
+    --text: #D2C1B6;
+    --title: #D2C1B6;
+    --muted: #456882;
+    --card-bg: #234C6A; 
+    --card-border: #D2C1B6; 
+    --primary: #66d9ef;
+    --primary-hover: #9befff;
+    --danger: #d9534f;
+    --muted-btn: #456882;
+    --tooltip-bg: #234C6A;
+    --tooltip-text: #D2C1B6;
+    --modal-bg: #234C6A;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    transition: background-color 160ms ease, color 160ms ease;
+}
+
+/* page title centered */
+.page-title {
+    text-align: center;
+    margin: 18px 0;
+    font-size: 1.6em;
+    font-weight: 600;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+    /* allow grid to size naturally without stretching vertically */
+    height: auto;
+    align-content: start; /* align rows to the top */
+    overflow-y: auto;
+    padding: 16px 10px 16px;
+    box-sizing: border-box;
+}
+
+.card {
+    border: 3px solid var(--card-border); /* slightly wider by default */
+    border-radius: 12px;
+    padding: 12px;
+    background: var(--card-bg);
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+/* Status-specific border colors */
+.card.status-OK { border-color: #28a745; } /* green */
+.card.status-NOK { border-color: #dc3545; } /* red */
+.card.status-UNDEFINED { border-color: #0b3b87; } /* dark blue */
+.card.status-NEEDFIX { border-color: #ff8c00; } /* orange */
+
+/* Card title color (theme-aware) */
+.card h3 {
+    color: var(--title);
+    margin: 8px 0 6px;
+    font-size: 1.1em;
+    line-height: 1.2;
+}
+
+.card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+/* Add card styling for the big plus create card */
+.card.add-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.card.add-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch; /* match card heights */
+}
+
+.card.add-card .add-plus {
+    font-size: 36px;
+    color: #2c7;
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #9c9;
+    border-radius: 9999px; /* round */
+}
+
+.card.add-card:hover .add-plus {
+    background: #f8fff8;
+    transform: translateY(-2px);
+}
+
+/* Base button style */
+.btn {
+    display: inline-block;
+    margin-top: auto; /* push to bottom in cards */
+    font-size: 0.95em;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 4px; /* pill */
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background 150ms ease, transform 120ms ease, box-shadow 120ms ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* color variants (only change colors) */
+.btn--blue { background: var(--primary); }
+.btn--blue:hover, .btn--blue:focus { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+
+.btn--red { background: var(--danger); }
+.btn--red:hover, .btn--red:focus { opacity: 0.95; transform: translateY(-1px); }
+
+.btn--grey { background: var(--muted-btn); }
+.btn--grey:hover, .btn--grey:focus { filter: brightness(0.95); }
+
+.btn--orange { background: #eb6811; } /* used for reset */
+.btn--orange:hover, .btn--orange:focus { opacity: 0.95; transform: translateY(-1px); }
+
+/* make sure buttons inside cards align consistently */
+.card .btn { align-self: flex-start; }
+
+/* card actions layout: put edit on left and status icons on right, at the bottom */
+.card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    gap: 8px;
+}
+.card-actions-left { display:flex; align-items:center; }
+.card-actions-right { display:flex; align-items:center; gap:8px; }
+/* make the status icon visually match the Edit button but allow shrinking below intrinsic size */
+.status-icon { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:6px; overflow:hidden; }
+/* support direct <img class="status-icon"> usage: constrain the image element itself so it can scale down */
+img.status-icon { display:block; width:auto; height:28px; max-width:36px; max-height:36px; object-fit:contain; }
+/* support wrapper element containing an img: make the inner image fill the wrapper */
+.status-icon img { width:100%; height:100%; display:block; object-fit:contain; }
+/* keep color fallbacks if displayed as text or if SVGs inherit color */
+.status-icon.status-nok { color: #dc3545; }
+.status-icon.status-needfix { color: #ff8c00; }
+
+.category {
+    font-size: 0.9em;
+    color: var(--text);
+}
+
+#drop-zone {
+    border: 2px dashed #aaa;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+}
+
+#drop-zone.hover {
+    border-color: #000;
+}
+
+/* Info icon tooltip for descriptions */
+.info-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-weight: bold;
+    margin-left: 8px;
+    cursor: pointer;
+    position: relative;
+    font-size: 12px;
+}
+
+.info-icon .tooltip-text {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--tooltip-bg);
+    color: var(--tooltip-text);
+    padding: 8px;
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    white-space: pre-wrap;
+    z-index: 100;
+    width: auto;
+    max-width: min(80vw, 640px);
+    max-height: 60vh;
+    overflow: auto;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+}
+
+.info-icon:hover .tooltip-text,
+.info-icon:focus .tooltip-text,
+.info-icon.tooltip-open .tooltip-text {
+    display: block;
+}
+
+.card[data-hidden="1"] { display: none; }
+
+/* Filter button and modal styles */
+.filter-btn {
+    background: var(--muted-btn);
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 9999px;
+    cursor: pointer;
+}
+
+.filter-btn:hover { filter: brightness(0.95) }
+
+.mode-label { color: var(--muted); font-size: 0.95em; }
+
+.quick-filter img { display:inline-block; height:22px; }
+
+/* Transparent quick-filter buttons with subtle border, responsive to dark mode */
+.btn.quick-filter {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    padding: 6px 8px;
+    border-radius: 6px;
+    box-shadow: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 120ms ease, border-color 120ms ease, transform 100ms ease;
+}
+
+.btn.quick-filter:hover {
+    background: rgba(0,0,0,0.04);
+    transform: translateY(-1px);
+}
+
+/* active state */
+.btn.quick-filter.active {
+    background: rgba(0,0,0,0.08);
+    border-color: var(--primary);
+}
+
+
+.modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+}
+
+.modal.open { display: flex; }
+
+.modal-content {
+    background: var(--modal-bg);
+    padding: 16px;
+    border-radius: 8px;
+    border: 2px solid var(--card-border);
+    min-width: 280px;
+    max-width: 90vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+.modal .filter-section { max-height: 40vh; overflow: auto; }
+
+/* Form layout: label-control grid */
+.form-grid {
+    display: grid;
+    /* left column fixed-ish, right column grows and can shrink when needed */
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 12px 16px;
+    align-items: start;
+    margin-bottom: 12px;
+}
+.form-row {
+    display: contents; /* let label and control participate in grid columns */
+}
+.form-label {
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    justify-self: start; /* left-align the label text */
+    text-align: left;
+    color: var(--text);
+    font-weight: 600;
+}
+.form-control {
+    display: flex;
+    flex-direction: column; /* stack multiple control elements vertically */
+    align-items: flex-start; /* keep left edges aligned */
+    width: 100%;
+    min-width: 0; /* allow shrink in constrained layouts */
+}
+/* make direct children of .form-control fill the available width (except action rows) */
+.form-control > * {
+    width: 100%;
+    box-sizing: border-box;
+}
+/* action button row: keep buttons inline and centered across the modal */
+.form-actions {
+    display: flex;
+    flex-direction: row; /* explicitly horizontal to override any parent column direction */
+    align-items: center;
+    gap: 8px;
+    justify-content: center; /* center the button group */
+    /* span both label and control columns so the group is centered in the modal */
+    grid-column: 1 / -1;
+    justify-self: center;
+    padding-top: 6px;
+}
+.form-actions > * {
+    width: auto !important;
+}
+.form-control input[type="text"],
+.form-control input[type="number"],
+.form-control select,
+.form-control textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+.form-control textarea { min-height: 80px; resize: vertical; }
+
+/* Responsive: stack labels on narrow screens */
+@media (max-width: 700px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .form-label { justify-self: start; padding-bottom: 6px; }
+}

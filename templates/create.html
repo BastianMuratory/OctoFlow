@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nouvelle Ressource</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+    <h1 class="page-title">Create Resource</h1>
+    <!-- theme toggle hidden on Create page (text still reflects current mode) -->
+    <button id="theme-toggle" class="btn btn--grey" title="Toggle theme" style="display:none;">Toggle theme</button>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="form-grid">
+    <div class="form-row">
+        <label class="form-label">Title</label>
+        <div class="form-control"><input type="text" name="title" value="{{ resource.title if resource else '' }}" placeholder="New Resource"></div>
+    </div>
+
+    <div class="form-row">
+        <label class="form-label">Image</label>
+        <div class="form-control">
+            <div>
+                <img id="image-preview"
+                    {% if resource and resource.image_filename %}
+                        src="{{ url_for('static', filename='uploads/' + resource.image_filename) }}"
+                        style="max-width:200px;display:block;margin-bottom:8px;"
+                    {% else %}
+                        src=""
+                        style="display:none;max-width:200px;margin-bottom:8px;"
+                    {% endif %}
+                    alt="image preview">
+            </div> 
+            <div id="drop-zone">Drop image here or click</div>
+            <input type="file" name="image" id="image-input" hidden>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label class="form-label">Description</label>
+        <div class="form-control"><textarea name="description">{{ resource.description if resource }}</textarea></div>
+    </div>
+
+    <div class="form-row">
+        <label class="form-label">Type</label>
+        <div class="form-control">
+            <select name="category" id="type-select">
+                {% for t in types %}
+                    <option value="{{ t.name }}" {% if resource and resource.category == t.name %}selected{% endif %}>{{ t.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label class="form-label">Type Options</label>
+        <div class="form-control">
+            <div id="type-fields">
+                {% for t in types %}
+                    <div class="type-block" data-type="{{ t.name }}" style="display:none;">
+                        {% for field in t.fields %}
+                            <div style="margin-bottom:8px;">
+                                <label>{{ field|capitalize }}</label>
+                                <input type="text" name="{{ field }}" value="{{ attrs.get(field) if attrs and attrs.get(field) }}">
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label class="form-label">Status</label>
+        <div class="form-control">
+            <select name="status">
+                {% for s in states %}
+                    <option value="{{ s }}" {% if status_val==s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <script>
+        const typeSelect = document.getElementById("type-select");
+
+        function updateTypeFields() {
+            const selected = typeSelect.value;
+            document.querySelectorAll('#type-fields .type-block').forEach(block => {
+                const isVisible = block.dataset.type === selected;
+                block.style.display = isVisible ? 'block' : 'none';
+                // enable inputs in the visible block, disable and clear in hidden blocks
+                block.querySelectorAll('input, select, textarea').forEach(el => {
+                    if (isVisible) {
+                        el.disabled = false;
+                    } else {
+                        // clear value and disable so it's not submitted
+                        try { el.value = ''; } catch (e) {}
+                        el.disabled = true;
+                    }
+                });
+            });
+        }
+
+        typeSelect.addEventListener('change', updateTypeFields);
+        // initial update on load (for edit)
+        updateTypeFields();
+    </script>
+
+    <script>
+        const dropZone = document.getElementById("drop-zone");
+        const input = document.getElementById("image-input");
+        const imgPreview = document.getElementById("image-preview");
+
+        // open file picker
+        if (dropZone && input) {
+            dropZone.addEventListener('click', () => input.click());
+
+            input.addEventListener('change', () => {
+                const f = input.files && input.files[0];
+                if (f) {
+                    if (imgPreview) imgPreview.src = URL.createObjectURL(f);
+                    dropZone.textContent = f.name;
+                }
+            });
+
+            dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+            dropZone.addEventListener('drop', e => {
+                e.preventDefault();
+                if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    input.files = e.dataTransfer.files;
+                    const f = input.files[0];
+                    if (f && imgPreview) imgPreview.src = URL.createObjectURL(f);
+                    dropZone.textContent = f.name;
+                }
+            });
+        }
+    </script>
+
+    <div class="form-row">
+        <label class="form-label"></label>
+        <div class="form-control">
+            <button type="submit" class="btn btn--blue">Create</button>
+            {% if resource %}
+                <button type="button" class="btn btn--red" id="delete-btn" style="margin-left:8px;">Delete</button>
+            {% endif %}
+            <a href="{{ url_for('index') }}" class="btn btn--grey" style="margin-left:8px;">Cancel</a>
+        </div>
+    </div>
+</form>
+
+{% if resource %}
+<script>
+(function(){
+    const btn = document.getElementById('delete-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function(){
+        if (!confirm('Delete this resource?')) return;
+        const f = document.createElement('form');
+        f.method = 'POST';
+        f.action = '{{ url_for("delete", resource_id=resource.id) }}';
+        document.body.appendChild(f);
+        f.submit();
+    });
+})();
+</script>
+{% endif %}
+
+<script>
+// Theme toggle on Create page (shared behavior)
+(function(){
+    const themeToggle = document.getElementById('theme-toggle');
+    function setTheme(dark){
+        if (dark) document.documentElement.classList.add('dark-mode');
+        else document.documentElement.classList.remove('dark-mode');
+        localStorage.setItem('theme', dark ? 'dark' : 'light');
+        if (themeToggle) themeToggle.textContent = dark ? 'Light Mode' : 'Dark Mode';
+    }
+    const stored = localStorage.getItem('theme');
+    setTheme(stored === 'dark');
+    if (themeToggle) themeToggle.addEventListener('click', ()=> setTheme(!document.documentElement.classList.contains('dark-mode')));
+})();
+</script>
+
+
+
+</body>
+</html>

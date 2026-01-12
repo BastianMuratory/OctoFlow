@@ -1,0 +1,12 @@
+{
+  "types": [
+    { "name": "DRONE", "fields": ["IP", "Mesh", "SD_Card"] },
+    { "name": "GCS", "fields": ["IP", "Switch"] },
+    { "name": "Radio", "fields": ["IP", "Mesh", "Key"] },
+    { "name": "BOITE_RADIO", "fields": [] },
+    { "name": "CAMERA", "fields": [] },
+    { "name": "VENTILATEUR", "fields": [] },
+    { "name": "OTHER", "fields": [] }
+  ],
+  "states": ["OK", "NOK", "UNDEFINED", "NEEDFIX"]
+}
