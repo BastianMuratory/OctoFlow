@@ -11,7 +11,7 @@
     <input id="search-input" type="search" placeholder="Search title or description..." aria-label="Search resources" style="margin-left:12px; padding:6px 10px; border:1px solid #ccc; border-radius:6px; flex:1; max-width:420px;">
     <button id="theme-toggle" class="btn btn--grey" title="Toggle theme" style="margin-left:8px;">Toggle theme</button>
 
-    <button id="filter-open" class="btn btn--grey" style="margin-left:8px;">Filter</button>
+    <button id="filter-open" class="btn btn--grey" style="margin-left:8px;">Display</button>
     <button id="create-open" class="btn btn--blue" style="margin-left:8px;">Create</button>
     <button id="quick-filter-drone" class="btn btn--grey quick-filter" data-type="DRONE" title="Show Drones" style="margin-left:8px;"><img src="{{ url_for('static', filename='Drone.png') }}" alt="Drone"></button>
     <button id="quick-filter-gcs" class="btn btn--grey quick-filter" data-type="GCS" title="Show GCS" style="margin-left:8px;"><img src="{{ url_for('static', filename='GCS.png') }}" alt="GCS"></button>
@@ -132,7 +132,7 @@ document.addEventListener('keydown', function(e){
 <!-- Filter modal -->
 <div id="filter-modal" class="modal" aria-hidden="true">
     <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="filter-title">
-        <h2 id="filter-title">Filters</h2>
+        <h2 id="filter-title">What to display</h2>
         <div class="filter-section">
             <strong>Types</strong><br>
             {% for t in types %}
