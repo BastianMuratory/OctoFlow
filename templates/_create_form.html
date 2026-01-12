@@ -1,0 +1,282 @@
+<form method="post" enctype="multipart/form-data" class="form-grid" action="{{ url_for('edit', resource_id=resource.id) if resource else url_for('create') }}">
+    <div class="form-row">
+        <label class="form-label">Title</label>
+        <div class="form-control"><input type="text" name="title" value="{{ resource.title if resource else '' }}" placeholder="New Resource"></div>
+    </div>
+
+    <div class="form-row">
+        <label class="form-label">Image</label>
+        <div class="form-control">
+            <div style="position:relative;display:inline-block;">
+                <img id="image-preview" {% if resource and resource.image_filename %}src="{{ url_for('static', filename='images/' + resource.image_filename) }}" style="max-width:200px;display:block;margin-bottom:8px;"{% else %}src="" style="display:none;max-width:200px;margin-bottom:8px;"{% endif %} alt="image preview">
+                <button type="button" id="remove-image-btn" class="btn btn--red" style="display:none;position:absolute;top:4px;right:4px;padding:4px 8px;font-size:12px;" title="Remove image">✕</button>
+            </div>
+            <div id="drop-zone">Drop image here or click</div>
+            <input type="file" name="image" id="image-input" hidden>
+            <input type="hidden" name="remove_image" id="remove-image-flag" value="0">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label class="form-label">Description</label>
+        <div class="form-control"><textarea name="description">{{ resource.description if resource }}</textarea></div>
+    </div>
+
+    <div class="form-row">
+        <label class="form-label">Type</label>
+        <div class="form-control">
+            <select name="category" id="type-select">
+                {% for t in types %}
+                    <option value="{{ t.name }}" {% if resource and resource.category == t.name %}selected{% endif %}>{{ t.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label class="form-label">Type Options</label>
+        <div class="form-control">
+            <div id="type-fields">
+                {% for t in types %}
+                    <div class="type-block" data-type="{{ t.name }}" style="display:none;">
+                        {% for field in t.fields %}
+                            <div style="margin-bottom:8px;">
+                                <label>{{ field|capitalize }}</label>
+                                <input type="text" name="{{ field }}" value="{{ attrs.get(field) if attrs and attrs.get(field) }}">
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label class="form-label">Status</label>
+        <div class="form-control">
+            <select name="status">
+                {% for s in states %}
+                    <option value="{{ s }}" {% if status_val==s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <script>
+        // type fields handling (works when this partial is included on page)
+        (function(){
+            const typeSelect = document.getElementById("type-select");
+            const imgPreview = document.getElementById("image-preview");
+            const input = document.getElementById("image-input");
+            const removeBtn = document.getElementById("remove-image-btn");
+            const removeFlag = document.getElementById("remove-image-flag");
+            let userUploadedImage = {{ 'true' if resource and resource.image_filename and not resource.image_filename.startswith('default_') else 'false' }};
+            const form = typeSelect ? typeSelect.closest('form') : null;
+            
+            if (!typeSelect) return;
+            
+            function isInEditMode() {
+                return form && form.getAttribute('data-edit-mode') === 'true';
+            }
+            
+            function updateRemoveButton() {
+                if (removeBtn && imgPreview) {
+                    const hasImage = imgPreview.style.display !== 'none' && imgPreview.src;
+                    removeBtn.style.display = hasImage ? 'block' : 'none';
+                }
+            }
+            
+            function loadDefaultImage(typeName) {
+                if (!typeName) return;
+                
+                const defaultImagePath = `/static/images/default_${typeName}.png`;
+                
+                // Check if the default image exists
+                const img = new Image();
+                img.onload = function() {
+                    // Image exists, show it
+                    if (imgPreview) {
+                        imgPreview.src = defaultImagePath;
+                        imgPreview.style.display = 'block';
+                    }
+                    updateRemoveButton();
+                };
+                img.onerror = function() {
+                    // No default image exists, hide preview
+                    if (imgPreview) {
+                        imgPreview.src = '';
+                        imgPreview.style.display = 'none';
+                    }
+                    updateRemoveButton();
+                };
+                img.src = defaultImagePath;
+            }
+            
+            function updateTypeFields(userTriggered = false) {
+                const selected = typeSelect.value;
+                document.querySelectorAll('#type-fields .type-block').forEach(block => {
+                    const isVisible = block.dataset.type === selected;
+                    block.style.display = isVisible ? 'block' : 'none';
+                    block.querySelectorAll('input, select, textarea').forEach(el => {
+                        if (isVisible) el.disabled = false; else { try { el.value = ''; } catch(e){}; el.disabled = true; }
+                    });
+                });
+                
+                // Only load default image when creating (NOT editing) AND user actively changed the type AND no image exists
+                if (!isInEditMode() && userTriggered && !userUploadedImage && imgPreview) {
+                    const hasCurrentImage = imgPreview.style.display !== 'none' && imgPreview.src && !imgPreview.src.includes('default_');
+                    if (!hasCurrentImage) {
+                        loadDefaultImage(selected);
+                    }
+                }
+            }
+            
+            // Remove button handler
+            if (removeBtn) {
+                removeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const dropZone = document.getElementById('drop-zone');
+                    if (imgPreview) {
+                        imgPreview.src = '';
+                        imgPreview.style.display = 'none';
+                    }
+                    if (input) {
+                        input.value = '';
+                    }
+                    if (dropZone) {
+                        dropZone.textContent = 'Drop image here or click';
+                    }
+                    if (removeFlag) {
+                        removeFlag.value = '1';
+                    }
+                    userUploadedImage = false;
+                    updateRemoveButton();
+                    // Don't auto-load default when removing, let user decide
+                });
+            }
+            
+            typeSelect.addEventListener('change', () => updateTypeFields(true));
+            updateTypeFields(false); // Initial call without loading defaults
+            updateRemoveButton();
+        })();
+    </script>
+
+    <div class="form-row">
+        <label class="form-label"></label>
+        <div class="form-control form-actions">
+            <button type="submit" class="btn btn--blue">{{ 'Save' if resource else 'Create' }}</button>
+            <!-- delete button is present but hidden by default; will be shown in edit mode -->
+            <button type="button" class="btn btn--red" id="delete-btn" style="margin-left:8px; {% if not resource %}display:none;{% endif %}" {% if resource %}data-resource-id="{{ resource.id }}"{% endif %}>Delete</button>
+            <a id="cancel-create" href="{{ url_for('index') }}" class="btn btn--grey" style="margin-left:8px;">Cancel</a>
+        </div>
+    </div>
+
+<script>
+// unified delete handler: instant AJAX deletion without confirmation, keeps filters active
+(function(){
+    const btn = document.getElementById('delete-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function(){
+        const id = btn.dataset.resourceId || '{{ resource.id if resource else '' }}';
+        if (!id) return;
+        // DELETE instantly via AJAX without confirmation
+        fetch('/delete/' + id, { method: 'POST' })
+            .then(response => {
+                if (response.ok) {
+                    // if we're in the modal on the index page, find and remove the card, close modal
+                    const card = document.querySelector('.grid .card[data-id="' + id + '"]');
+                    if (card) {
+                        card.remove();
+                        // re-equalize card heights after removal
+                        if (window.adjustCardHeights) window.adjustCardHeights();
+                    }
+                    // close the modal if open
+                    const modal = document.getElementById('create-modal');
+                    if (modal && modal.classList.contains('open')) {
+                        modal.classList.remove('open');
+                        modal.setAttribute('aria-hidden', 'true');
+                    }
+                    // if we're on the standalone edit page, redirect to index
+                    if (window.location.pathname.includes('/edit/')) {
+                        window.location.href = '/';
+                    }
+                } else {
+                    alert('Failed to delete resource');
+                }
+            })
+            .catch(err => {
+                console.error('Delete failed:', err);
+                alert('Error deleting resource');
+            });
+    });
+})();
+</script>
+</form>
+
+<script>
+// image drop/preview handling for the partial
+(function(){
+    const dropZone = document.getElementById("drop-zone");
+    const input = document.getElementById("image-input");
+    const imgPreview = document.getElementById("image-preview");
+    const removeBtn = document.getElementById("remove-image-btn");
+    const removeFlag = document.getElementById("remove-image-flag");
+    
+    if (!dropZone || !input) return;
+    
+    function updateRemoveButton() {
+        if (removeBtn && imgPreview) {
+            const hasImage = imgPreview.style.display !== 'none' && imgPreview.src;
+            removeBtn.style.display = hasImage ? 'block' : 'none';
+        }
+    }
+    
+    dropZone.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+        const f = input.files && input.files[0];
+        if (f) { 
+            if (imgPreview) { 
+                imgPreview.src = URL.createObjectURL(f); 
+                imgPreview.style.display = 'block'; 
+            } 
+            dropZone.textContent = f.name; 
+            if (removeFlag) removeFlag.value = '0';
+            updateRemoveButton();
+        }
+    });
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+            input.files = e.dataTransfer.files;
+            const f = input.files[0];
+            if (f && imgPreview) { 
+                imgPreview.src = URL.createObjectURL(f); 
+                imgPreview.style.display = 'block'; 
+            }
+            dropZone.textContent = f.name;
+            if (removeFlag) removeFlag.value = '0';
+            updateRemoveButton();
+        }
+    });
+    
+    // Initial update
+    updateRemoveButton();
+})();
+</script>
+
+{% if resource %}
+<script>
+// delete handler for edit context
+(function(){
+    const btn = document.getElementById('delete-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function(){
+        if (!confirm('Delete this resource?')) return;
+        const f = document.createElement('form'); f.method='POST'; f.action='{{ url_for("delete", resource_id=resource.id) }}'; document.body.appendChild(f); f.submit();
+    });
+})();
+</script>
+{% endif %}
