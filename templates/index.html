@@ -21,7 +21,7 @@
     {% for r in resources %}
     <div class="card status-{{ r.status|default('UNDEFINED') }}" data-type="{{ r.category }}" data-id="{{ r.id }}" data-hidden="0">
         {% if r.image_filename %}
-            <img src="{{ url_for('static', filename='uploads/' + r.image_filename) }}" alt="{{ r.title }}">
+            <img src="{{ url_for('static', filename='images/' + r.image_filename) }}" alt="{{ r.title }}">
         {% else %}
             <div class="no-image">No image</div>
         {% endif %}
@@ -158,7 +158,7 @@ document.addEventListener('keydown', function(e){
             </div>
         </div>
         <div style="margin-top:8px;">
-            {% include '_create_form.html' %}
+            {% include 'create.html' %}
         </div>
     </div>
 </div>
@@ -297,6 +297,9 @@ document.addEventListener('keydown', function(e){
             const f = createModal.querySelector('form');
             if (f && shouldReset) {
                 f.reset();
+                // Remove edit mode flag when creating new resource
+                f.removeAttribute('data-edit-mode');
+                f.action = '{{ url_for("create") }}';
                 // clear image preview and drop zone text
                 const p = createModal.querySelector('#image-preview'); if (p) { p.src = ''; p.style.display = 'none'; }
                 const dz = createModal.querySelector('#drop-zone'); if (dz) dz.textContent = 'Drop image here or click';
@@ -337,6 +340,8 @@ document.addEventListener('keydown', function(e){
                 if (!form) return;
                 // set form action to edit route
                 form.action = '/edit/' + id;
+                // Mark form as in edit mode
+                form.setAttribute('data-edit-mode', 'true');
                 // set submit label
                 const submitBtn = form.querySelector('button[type="submit"]'); if (submitBtn) submitBtn.textContent = 'Save';
                 // populate fields
@@ -346,8 +351,6 @@ document.addEventListener('keydown', function(e){
                 const status = this.dataset.status || '';
                 form.querySelector('input[name="title"]').value = title;
                 form.querySelector('textarea[name="description"]').value = desc;
-                const sel = form.querySelector('select[name="category"]');
-                if (sel) { sel.value = cat; sel.dispatchEvent(new Event('change')); }
                 const statusSel = form.querySelector('select[name="status"]'); if (statusSel) statusSel.value = status;
                 // attributes (JSON)
                 let attrs = {};
@@ -355,11 +358,20 @@ document.addEventListener('keydown', function(e){
                 Object.keys(attrs).forEach(k => {
                     const el = form.querySelector('[name="'+k+'"]'); if (el) el.value = attrs[k];
                 });
-                // image
+                // image - set BEFORE triggering category change
                 const img = form.querySelector('#image-preview'); const dz = form.querySelector('#drop-zone');
+                const removeBtn = form.querySelector('#remove-image-btn');
                 const imageName = this.dataset.image || '';
-                if (img) { if (imageName) { img.src = '/static/uploads/' + imageName; img.style.display = 'block'; } else { img.src = ''; img.style.display = 'none'; } }
+                if (img) { if (imageName) { img.src = '/static/images/' + imageName; img.style.display = 'block'; } else { img.src = ''; img.style.display = 'none'; } }
                 if (dz) dz.textContent = imageName ? imageName : 'Drop image here or click';
+                // Update remove button visibility
+                if (removeBtn && img) {
+                    const hasImage = img.style.display !== 'none' && img.src;
+                    removeBtn.style.display = hasImage ? 'block' : 'none';
+                }
+                // Now set category and trigger change (after image is set)
+                const sel = form.querySelector('select[name="category"]');
+                if (sel) { sel.value = cat; sel.dispatchEvent(new Event('change')); }
                 // show delete button
                 const deleteBtn = form.querySelector('#delete-btn'); if (deleteBtn) { deleteBtn.style.display = 'inline-block'; deleteBtn.dataset.resourceId = id; }
                 // open modal without resetting the form (we already populated it)

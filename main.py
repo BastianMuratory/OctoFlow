@@ -43,7 +43,7 @@ TYPE_FIELDS = {t.get('name', 'UNKNOWN'): t.get('fields', []) for t in CONFIG.get
 app = Flask(__name__)
 DB = "resources.db"
 
-UPLOAD_FOLDER = "static/uploads"
+UPLOAD_FOLDER = "static/images"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
@@ -179,6 +179,20 @@ def sanitize_category(category):
     types = CONFIG.get('types', [])
     return types[0].get('name', 'OTHER') if types else 'OTHER'
 
+def get_default_image(category):
+    """Check if a default image exists for the given category type.
+    Looks for static/images/default_TYPE.png and returns the filename if it exists.
+    """
+    if not category:
+        return None
+    
+    default_filename = f"default_{category}.png"
+    default_path = os.path.join("static", "images", default_filename)
+    
+    if os.path.exists(default_path):
+        return default_filename
+    return None
+
 @app.route("/")
 def index():
     conn = get_db()
@@ -224,15 +238,23 @@ def create():
         file = request.files.get("image")
         filename = None
 
-        if file and file.filename:
+        # sanitize category before proceeding
+        category = sanitize_category(category)
+
+        # Check if user wants to remove image
+        remove_image = request.form.get('remove_image') == '1'
+        
+        if remove_image:
+            filename = None
+        elif file and file.filename:
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+        else:
+            # No file uploaded, check for default image for this type
+            filename = get_default_image(category)
 
         # no visibility toggles any more — always set resources to visible
         to_display = 1
-
-        # sanitize category before proceeding
-        category = sanitize_category(category)
         
         # collect dynamic attribute fields only for the selected category
         attrs = {}
@@ -269,9 +291,34 @@ def edit(resource_id):
         file = request.files.get("image")
         filename = current["image_filename"] if current else None
 
-        if file and file.filename:
+        # Check if user wants to remove image
+        remove_image = request.form.get('remove_image') == '1'
+        
+        if remove_image:
+            # User wants to remove image, delete if it's not a default
+            if filename and not filename.startswith('default_'):
+                old_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                try:
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+                except Exception:
+                    pass
+            filename = None
+        elif file and file.filename:
+            # New file uploaded, delete old if it exists and not a default
+            if filename and not filename.startswith('default_'):
+                old_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                try:
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+                except Exception:
+                    pass
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+        elif not filename:
+            # No file uploaded and no existing image, check for default
+            submitted_category = request.form.get('category')
+            filename = get_default_image(submitted_category)
 
         # sanitize category before proceeding
         submitted_category = sanitize_category(request.form.get('category'))
@@ -358,12 +405,12 @@ def delete(resource_id):
     try:
         row = conn.execute('SELECT id, image_filename FROM resource WHERE id = ?', (resource_id,)).fetchone()
         if row:
-            # remove image file if present
+            # remove image file if present (but not default images)
             try:
                 filename = row['image_filename']
             except Exception:
                 filename = None
-            if filename:
+            if filename and not filename.startswith('default_'):
                 path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 try:
                     if os.path.exists(path):
