@@ -19,39 +19,66 @@
 
 <div class="grid">
     {% for r in resources %}
-    <div class="card status-{{ r.status|default('UNDEFINED') }}" data-type="{{ r.category }}" data-id="{{ r.id }}" data-hidden="0">
-        {% if r.image_filename %}
-            <img src="{{ url_for('static', filename='images/' + r.image_filename) }}" alt="{{ r.title }}">
-        {% else %}
-            <div class="no-image">No image</div>
-        {% endif %}
-        <h3>
-            {{ r.title }}
-            {% if r.description %}
-            <span class="info-icon" tabindex="0" role="button" aria-label="Show description">
-                i
-                <span class="tooltip-text">{{ (r.description|replace('<br>', '\n')|replace('<br/>','\n')|replace('<br />','\n'))|e }}</span>
-            </span>
-            {% endif %}
-        </h3>
-        <p class="category">{{ r.category }}</p>
-        {% if r.attributes %}
-            <ul class="attributes">
-            {% for k, v in r.attributes.items() %}
-                <li><strong>{{ k }}:</strong> {{ v }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-        <div class="card-actions">
-            <div class="card-actions-left">
-                <a href="{{ url_for('edit', resource_id=r.id) }}" class="btn btn--blue edit-btn" data-id="{{ r.id }}" data-title='{{ r.title|e }}' data-description='{{ r.description|e }}' data-category='{{ r.category }}' data-status='{{ r.status }}' data-attrs='{{ r.attributes|tojson }}' data-image='{{ r.image_filename if r.image_filename else "" }}'>Edit</a>
-            </div>
-            <div class="card-actions-right" aria-hidden="true">
-                {% if r.status == 'NOK' %}
-                    <img class="status-icon status-nok" src="{{ url_for('static', filename='Warning.png') }}" alt="NOK" title="NOK">
-                {% elif r.status == 'NEEDFIX' %}
-                    <img class="status-icon status-needfix" src="{{ url_for('static', filename='Tools.png') }}" alt="Need fix" title="Need fix">
+    <div class="card-container" data-type="{{ r.category }}" data-id="{{ r.id }}" data-hidden="0">
+        <div class="card status-{{ r.status|default('UNDEFINED') }}">
+            <div class="card-front">
+                {% if r.image_filename %}
+                    <img src="{{ url_for('static', filename='images/' + r.image_filename) }}" alt="{{ r.title }}">
+                {% else %}
+                    <div class="no-image">No image</div>
                 {% endif %}
+                <h3>
+                    {{ r.title }}
+                    {% if r.description %}
+                    <span class="info-icon" tabindex="0" role="button" aria-label="Show description">
+                        i
+                        <span class="tooltip-text">{{ (r.description|replace('<br>', '\n')|replace('<br/>','\n')|replace('<br />','\n'))|e }}</span>
+                    </span>
+                    {% endif %}
+                </h3>
+                <p class="category">{{ r.category }}</p>
+                {% if r.attributes %}
+                    <ul class="attributes">
+                    {% for k, v in r.attributes.items() %}
+                        <li><strong>{{ k }}:</strong> {{ v }}</li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+                <div class="card-actions">
+                    <div class="card-actions-left">
+                        <a href="{{ url_for('edit', resource_id=r.id) }}" class="btn btn--blue edit-btn" data-id="{{ r.id }}" data-title='{{ r.title|e }}' data-description='{{ r.description|e }}' data-category='{{ r.category }}' data-status='{{ r.status }}' data-attrs='{{ r.attributes|tojson }}' data-image='{{ r.image_filename if r.image_filename else "" }}'>Edit</a>
+                    </div>
+                    <div class="card-actions-right" aria-hidden="true">
+                        {% if r.status == 'NOK' %}
+                            <img class="status-icon status-nok" src="{{ url_for('static', filename='Warning.png') }}" alt="NOK" title="NOK">
+                        {% elif r.status == 'NEEDFIX' %}
+                            <img class="status-icon status-needfix" src="{{ url_for('static', filename='Tools.png') }}" alt="Need fix" title="Need fix">
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-back">
+                <h3>{{ r.title }}</h3>
+                {% if r.description %}
+                    <div class="description-full">
+                        <strong>Description:</strong>
+                        <p>{{ (r.description|replace('<br>', '\n')|replace('<br/>','\n')|replace('<br />','\n'))|e }}</p>
+                    </div>
+                {% endif %}
+                <div class="details">
+                    <p><strong>Type:</strong> {{ r.category }}</p>
+                    <p><strong>Status:</strong> {{ r.status }}</p>
+                    {% if r.attributes %}
+                        <div class="attributes-full">
+                            <strong>Attributes:</strong>
+                            <ul>
+                            {% for k, v in r.attributes.items() %}
+                                <li><strong>{{ k }}:</strong> {{ v }}</li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -65,10 +92,23 @@
 
 <!-- tooltip -->
 <script>
+// Card flip functionality
+document.addEventListener('click', function(e){
+    // Check if clicked on a card (but not on buttons or edit link)
+    const card = e.target.closest('.card');
+    if (card && !e.target.closest('.btn') && !e.target.closest('.edit-btn') && !e.target.closest('.info-icon')) {
+        const container = card.closest('.card-container');
+        if (container) {
+            container.classList.toggle('flipped');
+        }
+    }
+});
+
 // Toggle tooltip on click (useful on touch devices) and close when clicking elsewhere
 document.addEventListener('click', function(e){
     const icon = e.target.closest('.info-icon');
     if (icon) {
+        e.stopPropagation(); // Prevent card flip
         icon.classList.toggle('tooltip-open');
     } else {
         document.querySelectorAll('.info-icon.tooltip-open').forEach(ic => ic.classList.remove('tooltip-open'));
@@ -89,24 +129,39 @@ document.addEventListener('keydown', function(e){
     if (!grid) return;
 
     function adjustCardHeights(){
-        const cards = Array.from(document.querySelectorAll('.grid .card'));
+        const cards = Array.from(document.querySelectorAll('.grid .card-container'));
         if (!cards.length) return;
-        // reset any previously set minHeight
-        cards.forEach(c => c.style.minHeight = '');
-        // group cards by their top position to equalize per row
-        const rows = {};
+        
+        // reset any previously set minHeight to get natural heights
         cards.forEach(c => {
-            const top = Math.round(c.getBoundingClientRect().top);
-            (rows[top] = rows[top] || []).push(c);
+            c.style.minHeight = '';
+            c.style.height = '';
         });
-        Object.values(rows).forEach(group => {
-            if (!group.length) return;
-            let maxH = 0;
-            group.forEach(c => {
-                const h = c.getBoundingClientRect().height;
-                if (h > maxH) maxH = h;
+        
+        // Wait for layout to settle, then calculate rows based on actual positions
+        requestAnimationFrame(() => {
+            // Calculate grid columns by checking how many cards fit in the first row
+            const gridRect = document.querySelector('.grid').getBoundingClientRect();
+            const firstCardRect = cards[0].getBoundingClientRect();
+            const cardWidthWithGap = cards[1] ? cards[1].getBoundingClientRect().left - firstCardRect.left : firstCardRect.width;
+            const cols = Math.round(gridRect.width / cardWidthWithGap);
+            
+            // Group cards into rows based on column count
+            const rows = [];
+            for (let i = 0; i < cards.length; i += cols) {
+                rows.push(cards.slice(i, i + cols));
+            }
+            
+            // Equalize heights within each row
+            rows.forEach(row => {
+                if (!row.length) return;
+                let maxH = 0;
+                row.forEach(c => {
+                    const h = c.getBoundingClientRect().height;
+                    if (h > maxH) maxH = h;
+                });
+                row.forEach(c => c.style.minHeight = Math.ceil(maxH) + 'px');
             });
-            group.forEach(c => c.style.minHeight = Math.ceil(maxH) + 'px');
         });
     }
 
@@ -253,14 +308,14 @@ document.addEventListener('keydown', function(e){
         const searchWords = searchValue ? searchValue.split(/\s+/) : [];
 
         // only filter resource cards, keep the add-card always visible
-        document.querySelectorAll('.grid .card:not(.add-card)').forEach(card => {
-            const type = card.dataset.type;
+        document.querySelectorAll('.grid .card-container').forEach(container => {
+            const type = container.dataset.type;
             const okType = selected.has(type);
 
             // gather searchable text: title and description tooltip (if present)
-            const titleEl = card.querySelector('h3');
+            const titleEl = container.querySelector('h3');
             const titleText = titleEl ? titleEl.textContent : '';
-            const descEl = card.querySelector('.tooltip-text');
+            const descEl = container.querySelector('.tooltip-text');
             const descText = descEl ? descEl.textContent : '';
             const hay = (titleText + ' ' + descText).toLowerCase();
 
@@ -270,7 +325,7 @@ document.addEventListener('keydown', function(e){
                 okSearch = searchWords.some(w => w && hay.includes(w));
             }
 
-            card.style.display = (okType && okSearch) ? '' : 'none';
+            container.style.display = (okType && okSearch) ? '' : 'none';
         });
 
         // ensure add-card is always visible and placed last
