@@ -1,429 +1,322 @@
-from flask import Flask, render_template, request, redirect, url_for
-import sqlite3
-import os
+from __future__ import annotations
+
+import inspect
 import json
-from werkzeug.utils import secure_filename
+import sqlite3
+import uuid
+from pathlib import Path
+from typing import Any
 
-# load a config.json to drive available types, their per-type fields, and states
-def load_config(path="config.json"):
-    defaults = {
-        "types": [
-            {"name": "DRONE", "fields": ["rotors", "battery"]},
-            {"name": "GCS", "fields": ["firmware"]},
-            {"name": "OTHER", "fields": []}
-        ],
-        "states": ["OK", "NOK", "UNDEFINED", "NEEDFIX"]
-    }
-    
-    if os.path.exists(path):
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                config = json.load(f)
-                # Ensure types and states exist and have at least one entry
-                if not config.get('types') or len(config.get('types', [])) == 0:
-                    config['types'] = defaults['types']
-                if not config.get('states') or len(config.get('states', [])) == 0:
-                    config['states'] = defaults['states']
-                # Ensure each type has a name and fields list
-                for t in config.get('types', []):
-                    if 'fields' not in t:
-                        t['fields'] = []
-                return config
-        except Exception:
-            pass
-    # fallback defaults
-    return defaults
+from flask import Flask, jsonify, request
 
-CONFIG = load_config()
-# default status used when no status is provided
-DEFAULT_STATE = CONFIG.get('states', ['UNDEFINED'])[0] if CONFIG.get('states') else 'UNDEFINED'
-# map of type name -> allowed fields (used server-side to validate attributes)
-TYPE_FIELDS = {t.get('name', 'UNKNOWN'): t.get('fields', []) for t in CONFIG.get('types', []) if t.get('name')}
+from src.Model.GCS import GCS
+from src.Model.battery import Battery
+from src.Model.drone import Drone
+from src.Model.raspberry import Raspberry
+
 
 app = Flask(__name__)
-DB = "resources.db"
-
-UPLOAD_FOLDER = "static/images"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+DB_PATH = Path("resources.db")
 
 
-def get_db():
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
-    return conn
+MODEL_REGISTRY = {
+	"BATTERY": Battery,
+	"DRONE": Drone,
+	"GCS": GCS,
+	"RASPBERRY": Raspberry,
+}
 
 
-def ensure_column(conn, table, column, coltype):
-    """Ensure a column exists on a table by checking PRAGMA table_info and adding it if missing."""
-    cols = [row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()]
-    if column not in cols:
-        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
+def get_db() -> sqlite3.Connection:
+	conn = sqlite3.connect(DB_PATH)
+	conn.row_factory = sqlite3.Row
+	return conn
 
 
-def cleanup_orphaned_data():
-    """Clean up database entries that reference removed config items."""
-    conn = get_db()
-    try:
-        # Get all resources
-        rows = conn.execute("SELECT id, category, status, attributes FROM resource").fetchall()
-        
-        valid_categories = set(TYPE_FIELDS.keys())
-        valid_states = set(CONFIG.get('states', [DEFAULT_STATE]))
-        
-        for row in rows:
-            resource_id = row['id']
-            category = row['category']
-            status = row['status']
-            attrs_raw = row['attributes']
-            
-            needs_update = False
-            new_category = category
-            new_status = status
-            new_attrs = None
-            
-            # Fix invalid category
-            if category not in valid_categories:
-                new_category = sanitize_category(category)
-                needs_update = True
-            
-            # Fix invalid status
-            if status not in valid_states:
-                new_status = sanitize_status(status)
-                needs_update = True
-            
-            # Fix attributes with removed fields
-            if attrs_raw:
-                try:
-                    attrs = json.loads(attrs_raw)
-                    sanitized_attrs = sanitize_attributes(attrs, new_category)
-                    if attrs != sanitized_attrs:
-                        new_attrs = json.dumps(sanitized_attrs) if sanitized_attrs else None
-                        needs_update = True
-                except Exception:
-                    new_attrs = None
-                    needs_update = True
-            
-            # Update if necessary
-            if needs_update:
-                conn.execute(
-                    "UPDATE resource SET category = ?, status = ?, attributes = ? WHERE id = ?",
-                    (new_category, new_status, new_attrs, resource_id)
-                )
-        
-        conn.commit()
-    except Exception as e:
-        # If cleanup fails, log but don't crash the app
-        print(f"Warning: Database cleanup encountered an error: {e}")
-    finally:
-        conn.close()
-
-def init_db():
-    conn = get_db()
-
-    # create the table if it's missing (includes all desired columns so new DBs are correct)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS resource (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            description TEXT,
-            category TEXT,
-            image_filename TEXT,
-            to_display INTEGER,
-            status TEXT,
-            attributes TEXT
-        )
-    """)
-
-    # ensure columns exist on older DBs (safe to call multiple times)
-    try:
-        ensure_column(conn, "resource", "image_filename", "TEXT")
-        ensure_column(conn, "resource", "attributes", "TEXT")
-        ensure_column(conn, "resource", "status", "TEXT")
-        # previous versions allowed hiding resources; migrate existing rows to be visible
-        try:
-            conn.execute("UPDATE resource SET to_display = 1 WHERE to_display IS NULL OR to_display = 0")
-        except Exception:
-            # if the column doesn't exist yet or update fails, ignore
-            pass
-    except Exception:
-        # if migration fails for some reason, don't crash the app here
-        pass
-
-    conn.commit()
-    conn.close()
-    
-    # Clean up any orphaned data after initialization
-    cleanup_orphaned_data()
+def init_db() -> None:
+	conn = get_db()
+	conn.execute(
+		"""
+		CREATE TABLE IF NOT EXISTS resource (
+			db_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			resource_id TEXT NOT NULL UNIQUE,
+			resource_type TEXT NOT NULL,
+			name TEXT NOT NULL,
+			status INTEGER NOT NULL DEFAULT 0,
+			description TEXT,
+			attributes TEXT
+		)
+		"""
+	)
+	cols = [row[1] for row in conn.execute("PRAGMA table_info(resource)").fetchall()]
+	if "status" not in cols:
+		conn.execute("ALTER TABLE resource ADD COLUMN status INTEGER NOT NULL DEFAULT 0")
+	conn.commit()
+	conn.close()
 
 
-def sanitize_attributes(attrs, category):
-    """Remove attributes that are no longer defined in config for the given category."""
-    if not attrs or not isinstance(attrs, dict):
-        return {}
-    allowed_fields = TYPE_FIELDS.get(category, [])
-    return {k: v for k, v in attrs.items() if k in allowed_fields}
-
-def sanitize_status(status):
-    """Ensure status is valid, return default if not."""
-    valid_states = CONFIG.get('states', [DEFAULT_STATE])
-    if status and status in valid_states:
-        return status
-    return DEFAULT_STATE
-
-def sanitize_category(category):
-    """Ensure category exists in config, return first type if not."""
-    if category and category in TYPE_FIELDS:
-        return category
-    # Return first available type or 'OTHER' as fallback
-    types = CONFIG.get('types', [])
-    return types[0].get('name', 'OTHER') if types else 'OTHER'
-
-def get_default_image(category):
-    """Check if a default image exists for the given category type.
-    Looks for static/images/default_TYPE.png and returns the filename if it exists.
-    """
-    if not category:
-        return None
-    
-    default_filename = f"default_{category}.png"
-    default_path = os.path.join("static", "images", default_filename)
-    
-    if os.path.exists(default_path):
-        return default_filename
-    return None
-
-@app.route("/")
-def index():
-    conn = get_db()
-    # fetch all resources, we'll control visibility client-side
-    rows = conn.execute(
-        "SELECT * FROM resource"
-    ).fetchall()
-    resources = []
-    for r in rows:
-        d = dict(r)
-        # Parse attributes
-        if d.get("attributes"):
-            try:
-                d["attributes"] = json.loads(d["attributes"])
-            except Exception:
-                d["attributes"] = {}
-        else:
-            d["attributes"] = {}
-        
-        # Sanitize category to ensure it exists in current config
-        d["category"] = sanitize_category(d.get("category"))
-        
-        # Sanitize attributes based on current config
-        d["attributes"] = sanitize_attributes(d["attributes"], d["category"])
-        
-        # Sanitize status to ensure it's valid
-        d["status"] = sanitize_status(d.get("status"))
-        
-        # ensure to_display exists and is 0/1
-        # visibility flag removed: always visible
-        d["to_display"] = 1
-        resources.append(d)
-    conn.close()
-    return render_template("index.html", resources=resources, types=CONFIG.get('types', []), states=CONFIG.get('states', []), status_val=DEFAULT_STATE)
+def get_model_spec() -> dict[str, dict[str, Any]]:
+	specs: dict[str, dict[str, Any]] = {}
+	for type_name, cls in MODEL_REGISTRY.items():
+		sig = inspect.signature(cls.__init__)
+		fields: list[dict[str, Any]] = []
+		for name, param in sig.parameters.items():
+			if name in {"self", "resource_id"}:
+				continue
+			annotation = param.annotation if param.annotation is not inspect._empty else str
+			required = param.default is inspect._empty
+			fields.append(
+				{
+					"name": name,
+					"type": annotation,
+					"required": required,
+				}
+			)
+		specs[type_name] = {"class": cls, "fields": fields}
+	return specs
 
 
-@app.route("/create", methods=["GET", "POST"])
-def create():
-    if request.method == "POST":
-        title = request.form["title"]
-        description = request.form["description"].replace('\r\n','\n').replace('<br>','\n').replace('<br/>','\n').replace('<br />','\n')
-        category = request.form["category"]
-        file = request.files.get("image")
-        filename = None
-
-        # sanitize category before proceeding
-        category = sanitize_category(category)
-
-        # Check if user wants to remove image
-        remove_image = request.form.get('remove_image') == '1'
-        
-        if remove_image:
-            filename = None
-        elif file and file.filename:
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-        else:
-            # No file uploaded, check for default image for this type
-            filename = get_default_image(category)
-
-        # no visibility toggles any more — always set resources to visible
-        to_display = 1
-        
-        # collect dynamic attribute fields only for the selected category
-        attrs = {}
-        allowed = TYPE_FIELDS.get(category, [])
-        for k in allowed:
-            v = request.form.get(k)
-            if v is not None and v != "":
-                attrs[k] = v
-        attrs_json = json.dumps(attrs) if attrs else None
-
-        conn = get_db()
-        conn.execute(
-            """
-            INSERT INTO resource (title, description, category, image_filename, to_display, status, attributes)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (title, description, category, filename, to_display, request.form.get('status', DEFAULT_STATE), attrs_json),
-        )
-        conn.commit()
-        conn.close()
-
-        return redirect(url_for("index"))
-
-    # pass available types and states to template for dropdowns
-    return render_template("create.html", types=CONFIG.get('types', []), states=CONFIG.get('states', []), status_val=DEFAULT_STATE)
-
-@app.route("/edit/<int:resource_id>", methods=["GET", "POST"])
-def edit(resource_id):
-    conn = get_db()
-    if request.method == "POST":
-        # get current resource to preserve image when no new file uploaded
-        current = conn.execute("SELECT * FROM resource WHERE id = ?", (resource_id,)).fetchone()
-
-        file = request.files.get("image")
-        filename = current["image_filename"] if current else None
-
-        # Check if user wants to remove image
-        remove_image = request.form.get('remove_image') == '1'
-        
-        if remove_image:
-            # User wants to remove image, delete if it's not a default
-            if filename and not filename.startswith('default_'):
-                old_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-                try:
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
-                except Exception:
-                    pass
-            filename = None
-        elif file and file.filename:
-            # New file uploaded, delete old if it exists and not a default
-            if filename and not filename.startswith('default_'):
-                old_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-                try:
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
-                except Exception:
-                    pass
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-        elif not filename:
-            # No file uploaded and no existing image, check for default
-            submitted_category = request.form.get('category')
-            filename = get_default_image(submitted_category)
-
-        # sanitize category before proceeding
-        submitted_category = sanitize_category(request.form.get('category'))
-        submitted_status = sanitize_status(request.form.get('status', DEFAULT_STATE))
-        
-        # merge attributes: keep only allowed fields for the new category
-        allowed = TYPE_FIELDS.get(submitted_category, [])
-        existing_attrs = {}
-        if current:
-            try:
-                current_raw = current["attributes"]
-            except Exception:
-                current_raw = None
-            if current_raw:
-                try:
-                    existing_attrs = json.loads(current_raw)
-                except Exception:
-                    existing_attrs = {}
-        # filter to allowed keys only (this removes fields from other types)
-        filtered = {k: v for k, v in existing_attrs.items() if k in allowed}
-        # update with submitted allowed fields
-        for k in allowed:
-            val = request.form.get(k)
-            if val is None or val == "":
-                filtered.pop(k, None)
-            else:
-                filtered[k] = val
-        attrs_json = json.dumps(filtered) if filtered else None
-
-        # normalize description textarea input similarly to create
-        desc_clean = request.form["description"].replace('\r\n','\n').replace('<br>','\n').replace('<br/>','\n').replace('<br />','\n')
-        conn.execute("""
-            UPDATE resource
-            SET title = ?, description = ?, category = ?, image_filename = ?, to_display = ?, status = ?, attributes = ?
-            WHERE id = ?
-        """, (
-            request.form["title"],
-            desc_clean,
-            submitted_category,
-            filename,
-            1,  # always visible
-            submitted_status,
-            attrs_json,
-            resource_id
-        ))
-        conn.commit()
-        conn.close()
-        return redirect(url_for("index"))
-
-    resource = conn.execute(
-        "SELECT * FROM resource WHERE id = ?", (resource_id,)
-    ).fetchone()
-
-    attrs = {}
-    status_val = DEFAULT_STATE
-    if resource:
-        # Get category and sanitize it
-        resource_category = sanitize_category(resource.get('category') if hasattr(resource, 'get') else resource['category'])
-        
-        try:
-            resource_raw = resource["attributes"]
-        except Exception:
-            resource_raw = None
-        if resource_raw:
-            try:
-                attrs = json.loads(resource_raw)
-                # Sanitize attributes based on current config
-                attrs = sanitize_attributes(attrs, resource_category)
-            except Exception:
-                attrs = {}
-        try:
-            status_val = sanitize_status(resource['status'] if resource['status'] else None)
-        except Exception:
-            status_val = DEFAULT_STATE
-
-    conn.close()
-
-    return render_template("create.html", resource=resource, types=CONFIG.get('types', []), attrs=attrs, states=CONFIG.get('states', []), status_val=status_val)
+MODEL_SPECS = get_model_spec()
 
 
-@app.route('/delete/<int:resource_id>', methods=['POST'])
-def delete(resource_id):
-    conn = get_db()
-    try:
-        row = conn.execute('SELECT id, image_filename FROM resource WHERE id = ?', (resource_id,)).fetchone()
-        if row:
-            # remove image file if present (but not default images)
-            try:
-                filename = row['image_filename']
-            except Exception:
-                filename = None
-            if filename and not filename.startswith('default_'):
-                path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                try:
-                    if os.path.exists(path):
-                        os.remove(path)
-                except Exception:
-                    pass
-            conn.execute('DELETE FROM resource WHERE id = ?', (resource_id,))
-            conn.commit()
-    finally:
-        conn.close()
-    return redirect(url_for('index'))
+def normalize_type(type_name: str | None) -> str:
+	if not type_name:
+		raise ValueError("Field 'type' is required.")
+	normalized = type_name.upper()
+	if normalized not in MODEL_SPECS:
+		raise ValueError(f"Unknown resource type '{type_name}'.")
+	return normalized
+
+
+def cast_value(value: Any, expected_type: Any) -> Any:
+	if expected_type is bool:
+		if isinstance(value, bool):
+			return value
+		if isinstance(value, str):
+			lowered = value.strip().lower()
+			if lowered in {"true", "1", "yes", "on"}:
+				return True
+			if lowered in {"false", "0", "no", "off"}:
+				return False
+		if isinstance(value, (int, float)):
+			return bool(value)
+		raise ValueError("Expected a boolean value.")
+
+	if expected_type is int:
+		if isinstance(value, bool):
+			raise ValueError("Expected an integer, got boolean.")
+		return int(value)
+
+	if expected_type is float:
+		if isinstance(value, bool):
+			raise ValueError("Expected a float, got boolean.")
+		return float(value)
+
+	return str(value) if value is not None else ""
+
+
+def validate_status(value: Any) -> int:
+	status_val = cast_value(value, int)
+	if status_val not in {0, 1, 2}:
+		raise ValueError("Field 'status' must be 0, 1 or 2.")
+	return status_val
+
+
+def validate_payload(payload: dict[str, Any], resource_type: str, partial: bool = False) -> dict[str, Any]:
+	spec = MODEL_SPECS[resource_type]["fields"]
+	allowed = {f["name"]: f for f in spec}
+
+	if "name" not in allowed:
+		raise ValueError("Model must include a 'name' field in constructor.")
+
+	submitted_attrs = payload.get("attributes")
+	if submitted_attrs is None:
+		submitted_attrs = {}
+	if not isinstance(submitted_attrs, dict):
+		raise ValueError("Field 'attributes' must be an object.")
+
+	unknown = [k for k in submitted_attrs if k not in allowed or k in {"name", "description", "status"}]
+	if unknown:
+		raise ValueError(f"Unknown attribute(s) for type {resource_type}: {', '.join(unknown)}")
+
+	result: dict[str, Any] = {}
+	for f in spec:
+		field_name = f["name"]
+		field_type = f["type"]
+		required = f["required"]
+
+		if field_name in {"name", "description", "status"}:
+			if field_name in payload:
+				if field_name == "status":
+					result[field_name] = validate_status(payload[field_name])
+				else:
+					result[field_name] = cast_value(payload[field_name], field_type)
+			elif required and not partial:
+				raise ValueError(f"Missing required field '{field_name}'.")
+			continue
+
+		if field_name in submitted_attrs:
+			result[field_name] = cast_value(submitted_attrs[field_name], field_type)
+		elif required and not partial:
+			raise ValueError(f"Missing required attribute '{field_name}'.")
+
+	return result
+
+
+def row_to_resource(row: sqlite3.Row) -> dict[str, Any]:
+	attrs_raw = row["attributes"]
+	try:
+		attrs = json.loads(attrs_raw) if attrs_raw else {}
+	except Exception:
+		attrs = {}
+
+	return {
+		"id": row["resource_id"],
+		"type": row["resource_type"],
+		"name": row["name"],
+		"status": row["status"],
+		"description": row["description"] or "",
+		"attributes": attrs,
+	}
+
+
+@app.get("/health")
+def health() -> Any:
+	return jsonify({"status": "ok"})
+
+
+@app.get("/resource-types")
+def resource_types() -> Any:
+	result = {}
+	for type_name, spec in MODEL_SPECS.items():
+		fields = []
+		for f in spec["fields"]:
+			py_type = f["type"]
+			type_label = py_type.__name__ if hasattr(py_type, "__name__") else str(py_type)
+			fields.append({"name": f["name"], "type": type_label, "required": f["required"]})
+		result[type_name] = fields
+	return jsonify(result)
+
+
+@app.post("/resources")
+def create_resource() -> Any:
+	payload = request.get_json(silent=True) or {}
+	try:
+		resource_type = normalize_type(payload.get("type"))
+		validated = validate_payload(payload, resource_type, partial=False)
+	except ValueError as exc:
+		return jsonify({"error": str(exc)}), 400
+
+	resource_id = str(uuid.uuid4())
+	name = validated.get("name", "")
+	status = validated.get("status", 0)
+	description = validated.get("description", "")
+	attrs = {k: v for k, v in validated.items() if k not in {"name", "description", "status"}}
+
+	conn = get_db()
+	conn.execute(
+		"""
+		INSERT INTO resource (resource_id, resource_type, name, status, description, attributes)
+		VALUES (?, ?, ?, ?, ?, ?)
+		""",
+		(resource_id, resource_type, name, status, description, json.dumps(attrs) if attrs else None),
+	)
+	conn.commit()
+	row = conn.execute("SELECT * FROM resource WHERE resource_id = ?", (resource_id,)).fetchone()
+	conn.close()
+
+	return jsonify(row_to_resource(row)), 201
+
+
+@app.get("/resources")
+def list_resources() -> Any:
+	type_filter = request.args.get("type")
+	conn = get_db()
+	if type_filter:
+		try:
+			normalized = normalize_type(type_filter)
+		except ValueError as exc:
+			conn.close()
+			return jsonify({"error": str(exc)}), 400
+		rows = conn.execute("SELECT * FROM resource WHERE resource_type = ? ORDER BY db_id DESC", (normalized,)).fetchall()
+	else:
+		rows = conn.execute("SELECT * FROM resource ORDER BY db_id DESC").fetchall()
+	conn.close()
+	return jsonify([row_to_resource(r) for r in rows])
+
+
+@app.get("/resources/<string:resource_id>")
+def get_resource(resource_id: str) -> Any:
+	conn = get_db()
+	row = conn.execute("SELECT * FROM resource WHERE resource_id = ?", (resource_id,)).fetchone()
+	conn.close()
+	if not row:
+		return jsonify({"error": "Resource not found."}), 404
+	return jsonify(row_to_resource(row))
+
+
+@app.route("/resources/<string:resource_id>", methods=["PUT", "PATCH"])
+def update_resource(resource_id: str) -> Any:
+	payload = request.get_json(silent=True) or {}
+	conn = get_db()
+	row = conn.execute("SELECT * FROM resource WHERE resource_id = ?", (resource_id,)).fetchone()
+	if not row:
+		conn.close()
+		return jsonify({"error": "Resource not found."}), 404
+
+	current = row_to_resource(row)
+	is_partial = request.method == "PATCH"
+
+	try:
+		new_type = normalize_type(payload.get("type", current["type"]))
+		merged_payload = {
+			"name": payload.get("name", current["name"]),
+			"status": payload.get("status", current["status"]),
+			"description": payload.get("description", current["description"]),
+			"attributes": current["attributes"].copy(),
+		}
+		if isinstance(payload.get("attributes"), dict):
+			merged_payload["attributes"].update(payload["attributes"])
+
+		validated = validate_payload(merged_payload, new_type, partial=is_partial)
+	except ValueError as exc:
+		conn.close()
+		return jsonify({"error": str(exc)}), 400
+
+	name = validated.get("name", current["name"])
+	status = validated.get("status", current["status"])
+	description = validated.get("description", current["description"])
+	attrs = {k: v for k, v in validated.items() if k not in {"name", "description", "status"}}
+
+	conn.execute(
+		"""
+		UPDATE resource
+		SET resource_type = ?, name = ?, status = ?, description = ?, attributes = ?
+		WHERE resource_id = ?
+		""",
+		(new_type, name, status, description, json.dumps(attrs) if attrs else None, resource_id),
+	)
+	conn.commit()
+	updated = conn.execute("SELECT * FROM resource WHERE resource_id = ?", (resource_id,)).fetchone()
+	conn.close()
+
+	return jsonify(row_to_resource(updated))
+
+
+@app.delete("/resources/<string:resource_id>")
+def delete_resource(resource_id: str) -> Any:
+	conn = get_db()
+	row = conn.execute("SELECT * FROM resource WHERE resource_id = ?", (resource_id,)).fetchone()
+	if not row:
+		conn.close()
+		return jsonify({"error": "Resource not found."}), 404
+
+	conn.execute("DELETE FROM resource WHERE resource_id = ?", (resource_id,))
+	conn.commit()
+	conn.close()
+	return "", 204
 
 
 if __name__ == "__main__":
-    init_db()
-    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
+	init_db()
+	app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
