@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Resource Manager</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        select, input, button, textarea { margin: 5px 0; padding: 5px; }
+        .resource-card {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .actions button { margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+<h2>Resource Manager</h2>
+
+<label>Resource Type:</label>
+<select id="resourceType"></select>
+
+<h3>Create / Edit Resource</h3>
+<form id="resourceForm"></form>
+<button onclick="submitResource()">Save</button>
+
+<hr>
+
+<h3>Resources</h3>
+<div id="resourceList"></div>
+
+<script>
+const API_BASE = "http://localhost:5000";
+let resourceTypes = {};
+let editingId = null;
+
+async function fetchResourceTypes() {
+    const res = await fetch(`${API_BASE}/resource-types`);
+    resourceTypes = await res.json();
+
+    const select = document.getElementById("resourceType");
+    select.innerHTML = "";
+
+    Object.keys(resourceTypes).forEach(type => {
+        const option = document.createElement("option");
+        option.value = type;
+        option.textContent = type;
+        select.appendChild(option);
+    });
+
+    buildForm();
+    loadResources();
+}
+
+function buildForm() {
+    const type = document.getElementById("resourceType").value;
+    const form = document.getElementById("resourceForm");
+    form.innerHTML = "";
+
+    resourceTypes[type].forEach(field => {
+        const label = document.createElement("label");
+        label.textContent = field.name;
+        form.appendChild(label);
+
+        let input = document.createElement("input");
+        input.name = field.name;
+
+        if (field.type === "int") input.type = "number";
+        else if (field.type === "bool") input.type = "checkbox";
+        else input.type = "text";
+
+        form.appendChild(input);
+        form.appendChild(document.createElement("br"));
+    });
+}
+
+function buildPayload() {
+    const type = document.getElementById("resourceType").value;
+    const form = document.getElementById("resourceForm");
+    const payload = {
+        type: type,
+        attributes: {}
+    };
+
+    resourceTypes[type].forEach(field => {
+        const el = form.querySelector(`[name="${field.name}"]`);
+        if (!el) return;
+
+        let value;
+        if (el.type === "checkbox") value = el.checked;
+        else if (el.type === "number") value = el.value === "" ? null : parseInt(el.value);
+        else value = el.value;
+
+        if (["name", "status", "description"].includes(field.name)) {
+            payload[field.name] = value;
+        } else {
+            payload.attributes[field.name] = value;
+        }
+    });
+
+    return payload;
+}
+
+async function submitResource() {
+    const payload = buildPayload();
+
+    const method = editingId ? "PUT" : "POST";
+    const url = editingId
+        ? `${API_BASE}/resources/${editingId}`
+        : `${API_BASE}/resources`;
+
+    const res = await fetch(url, {
+        method: method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Error");
+        return;
+    }
+
+    editingId = null;
+    document.getElementById("resourceForm").reset();
+    loadResources();
+}
+
+async function loadResources() {
+    const type = document.getElementById("resourceType").value;
+    const res = await fetch(`${API_BASE}/resources?type=${type}`);
+    const resources = await res.json();
+
+    const container = document.getElementById("resourceList");
+    container.innerHTML = "";
+
+    resources.forEach(resource => {
+        const div = document.createElement("div");
+        div.className = "resource-card";
+
+        div.innerHTML = `
+            <strong>${resource.name}</strong> (${resource.type})<br>
+            Status: ${resource.status}<br>
+            Description: ${resource.description}<br>
+            <pre>${JSON.stringify(resource.attributes, null, 2)}</pre>
+            <div class="actions">
+                <button onclick='editResource(${JSON.stringify(resource)})'>Edit</button>
+                <button onclick='deleteResource("${resource.id}")'>Delete</button>
+            </div>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+function editResource(resource) {
+    editingId = resource.id;
+
+    const form = document.getElementById("resourceForm");
+
+    resourceTypes[resource.type].forEach(field => {
+        const el = form.querySelector(`[name="${field.name}"]`);
+        if (!el) return;
+
+        if (["name", "status", "description"].includes(field.name)) {
+            if (el.type === "checkbox") el.checked = resource[field.name];
+            else el.value = resource[field.name];
+        } else {
+            const val = resource.attributes[field.name];
+            if (el.type === "checkbox") el.checked = val;
+            else el.value = val;
+        }
+    });
+}
+
+async function deleteResource(id) {
+    await fetch(`${API_BASE}/resources/${id}`, {
+        method: "DELETE"
+    });
+
+    loadResources();
+}
+
+document.getElementById("resourceType").addEventListener("change", () => {
+    editingId = null;
+    buildForm();
+    loadResources();
+});
+
+fetchResourceTypes();
+</script>
+
+</body>
+</html>

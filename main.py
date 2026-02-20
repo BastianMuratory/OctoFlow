@@ -13,9 +13,11 @@ from src.Model.GCS import GCS
 from src.Model.battery import Battery
 from src.Model.drone import Drone
 from src.Model.raspberry import Raspberry
+from flask_cors import CORS
 
 
 app = Flask(__name__)
+CORS(app)
 DB_PATH = Path("resources.db")
 
 
@@ -39,7 +41,7 @@ def init_db() -> None:
 		"""
 		CREATE TABLE IF NOT EXISTS resource (
 			db_id INTEGER PRIMARY KEY AUTOINCREMENT,
-			resource_id TEXT NOT NULL UNIQUE,
+			id TEXT NOT NULL UNIQUE,
 			resource_type TEXT NOT NULL,
 			name TEXT NOT NULL,
 			status INTEGER NOT NULL DEFAULT 0,
@@ -61,7 +63,7 @@ def get_model_spec() -> dict[str, dict[str, Any]]:
 		sig = inspect.signature(cls.__init__)
 		fields: list[dict[str, Any]] = []
 		for name, param in sig.parameters.items():
-			if name in {"self", "resource_id"}:
+			if name in {"self", "id"}:
 				continue
 			annotation = param.annotation if param.annotation is not inspect._empty else str
 			required = param.default is inspect._empty
@@ -171,7 +173,7 @@ def row_to_resource(row: sqlite3.Row) -> dict[str, Any]:
 		attrs = {}
 
 	return {
-		"id": row["resource_id"],
+		"id": row["id"],
 		"type": row["resource_type"],
 		"name": row["name"],
 		"status": row["status"],
@@ -207,7 +209,7 @@ def create_resource() -> Any:
 	except ValueError as exc:
 		return jsonify({"error": str(exc)}), 400
 
-	resource_id = str(uuid.uuid4())
+	id = str(uuid.uuid4())
 	name = validated.get("name", "")
 	status = validated.get("status", 0)
 	description = validated.get("description", "")
@@ -216,13 +218,13 @@ def create_resource() -> Any:
 	conn = get_db()
 	conn.execute(
 		"""
-		INSERT INTO resource (resource_id, resource_type, name, status, description, attributes)
+		INSERT INTO resource (id, resource_type, name, status, description, attributes)
 		VALUES (?, ?, ?, ?, ?, ?)
 		""",
-		(resource_id, resource_type, name, status, description, json.dumps(attrs) if attrs else None),
+		(id, resource_type, name, status, description, json.dumps(attrs) if attrs else None),
 	)
 	conn.commit()
-	row = conn.execute("SELECT * FROM resource WHERE resource_id = ?", (resource_id,)).fetchone()
+	row = conn.execute("SELECT * FROM resource WHERE id = ?", (id,)).fetchone()
 	conn.close()
 
 	return jsonify(row_to_resource(row)), 201
@@ -245,21 +247,21 @@ def list_resources() -> Any:
 	return jsonify([row_to_resource(r) for r in rows])
 
 
-@app.get("/resources/<string:resource_id>")
-def get_resource(resource_id: str) -> Any:
+@app.get("/resources/<string:id>")
+def get_resource(id: str) -> Any:
 	conn = get_db()
-	row = conn.execute("SELECT * FROM resource WHERE resource_id = ?", (resource_id,)).fetchone()
+	row = conn.execute("SELECT * FROM resource WHERE id = ?", (id,)).fetchone()
 	conn.close()
 	if not row:
 		return jsonify({"error": "Resource not found."}), 404
 	return jsonify(row_to_resource(row))
 
 
-@app.route("/resources/<string:resource_id>", methods=["PUT", "PATCH"])
-def update_resource(resource_id: str) -> Any:
+@app.route("/resources/<string:id>", methods=["PUT", "PATCH"])
+def update_resource(id: str) -> Any:
 	payload = request.get_json(silent=True) or {}
 	conn = get_db()
-	row = conn.execute("SELECT * FROM resource WHERE resource_id = ?", (resource_id,)).fetchone()
+	row = conn.execute("SELECT * FROM resource WHERE id = ?", (id,)).fetchone()
 	if not row:
 		conn.close()
 		return jsonify({"error": "Resource not found."}), 404
@@ -292,26 +294,26 @@ def update_resource(resource_id: str) -> Any:
 		"""
 		UPDATE resource
 		SET resource_type = ?, name = ?, status = ?, description = ?, attributes = ?
-		WHERE resource_id = ?
+		WHERE id = ?
 		""",
-		(new_type, name, status, description, json.dumps(attrs) if attrs else None, resource_id),
+		(new_type, name, status, description, json.dumps(attrs) if attrs else None, id),
 	)
 	conn.commit()
-	updated = conn.execute("SELECT * FROM resource WHERE resource_id = ?", (resource_id,)).fetchone()
+	updated = conn.execute("SELECT * FROM resource WHERE id = ?", (id,)).fetchone()
 	conn.close()
 
 	return jsonify(row_to_resource(updated))
 
 
-@app.delete("/resources/<string:resource_id>")
-def delete_resource(resource_id: str) -> Any:
+@app.delete("/resources/<string:id>")
+def delete_resource(id: str) -> Any:
 	conn = get_db()
-	row = conn.execute("SELECT * FROM resource WHERE resource_id = ?", (resource_id,)).fetchone()
+	row = conn.execute("SELECT * FROM resource WHERE id = ?", (id,)).fetchone()
 	if not row:
 		conn.close()
 		return jsonify({"error": "Resource not found."}), 404
 
-	conn.execute("DELETE FROM resource WHERE resource_id = ?", (resource_id,))
+	conn.execute("DELETE FROM resource WHERE id = ?", (id,))
 	conn.commit()
 	conn.close()
 	return "", 204
