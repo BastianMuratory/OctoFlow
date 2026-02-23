@@ -2,7 +2,7 @@ from flask import Flask, Response, send_from_directory
 from flask_cors import CORS
 
 # Routes
-from back.routes.resources import resources_bp
+from back.routes.drones import drones_bp
 
 # App parameters
 HOST = "0.0.0.0"
@@ -10,7 +10,7 @@ PORT = 5000
 
 # Flask app
 app = Flask(__name__, static_folder="front/static")
-app.register_blueprint(resources_bp)
+app.register_blueprint(drones_bp)
 CORS(app)
 
 # Serve index.html by default
