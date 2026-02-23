@@ -58,3 +58,46 @@ html.dark body {
   background: var(--create-bg);
   color: var(--create-text);
 }
+
+/* Cards grid */
+.drone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+/* Drone cards */
+.drone-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border-color .2s;
+}
+
+.drone-card:hover {
+  border-color: var(--primary);
+}
+
+.drone-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color .2s, background .2s;
+}
+
+.btn-delete:hover {
+  color: #e05c5c;
+  background: rgba(224, 92, 92, .1);
+}

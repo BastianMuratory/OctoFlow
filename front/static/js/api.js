@@ -1,8 +1,16 @@
-async function getResources() {
-  const res = await fetch("http://localhost:5000/resources")
-  
-  if (!res.ok)
-    throw new Error("Server error")
+const API = "http://localhost:5000"
 
-  return res.json()
+async function getDrones() {
+    const res = await fetch(`${API}/drones`)
+    
+    if (!res.ok)
+        throw new Error("Server error")
+    return res.json()
+}
+
+async function deleteDrone(id) {
+    const res = await fetch(`${API}/drones/${id}`, { method: "DELETE" })
+
+    if (!res.ok)
+        throw new Error("Failed to delete drone")
 }

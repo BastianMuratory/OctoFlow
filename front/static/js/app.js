@@ -1,6 +1,11 @@
 async function init() {
-    const data = await getResources()
-    console.log(data)
+    const drones = await getDrones()
+    renderDrones(drones, handleDelete)
+}
+
+async function handleDelete(id) {
+    await deleteDrone(id)
+    init()
 }
 
 init()
