@@ -1,0 +1,60 @@
+/* Themes */
+body {
+  --bg:         #f4f5f7;
+  --text:       #1a1d23;
+  --btn-bg:     #1a1d23;
+  --btn-text:   #ffffff;
+  --create-bg:  #4ea04a;
+  --create-text:#ffffff;
+
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  transition: background .2s, color .2s;
+}
+
+body.dark {
+  --bg:         #2e2e2e;
+  --text:       #e8eaf0;
+  --btn-bg:     #e8eaf0;
+  --btn-text:   #0d0f14;
+  --create-bg:  #a9dc76;
+  --create-text:#0d0f14;
+}
+
+/* Theme toggle button */
+.btn-theme {
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s, color .2s;
+}
+
+.btn-theme:hover {
+  opacity: .85;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+}
+
+/* Create resource button */
+.btn-create {
+  background: var(--create-bg);
+  color: var(--create-text);
+  border: none;
+  border-radius: 8px;
+  transition: background .2s, color .2s, opacity .2s;
+}
+
+.btn-create:hover {
+  opacity: .85;
+  background: var(--create-bg);
+  color: var(--create-text);
+}
