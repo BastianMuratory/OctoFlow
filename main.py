@@ -1,22 +1,27 @@
-from __future__ import annotations
-
-import inspect
-import json
-import sqlite3
-import uuid
-from pathlib import Path
-from typing import Any
-
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, Response, send_from_directory
 from flask_cors import CORS
 
-app = Flask(__name__)
-CORS(app)
-DB_PATH = Path("resources.db")
+# Routes
+from back.routes.resources import resources_bp
 
+# App parameters
+HOST = "0.0.0.0"
+PORT = 5000
+
+# Flask app
+app = Flask(__name__, static_folder="front/static")
+app.register_blueprint(resources_bp)
+CORS(app)
+
+# Serve index.html by default
 @app.route("/")
 def index():
     return send_from_directory("front", "index.html")
 
+# Tells the browser that OctoFlow doesn't have a favicon.ico
+@app.route("/favicon.ico")
+def favicon():
+    return Response(status=204)
+
 if __name__ == "__main__":	
-	app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
+	app.run(host=HOST, port=PORT, debug=True)

@@ -14,7 +14,7 @@ body {
   transition: background .2s, color .2s;
 }
 
-body.dark {
+html.dark body {
   --bg:         #2e2e2e;
   --text:       #e8eaf0;
   --btn-bg:     #e8eaf0;
