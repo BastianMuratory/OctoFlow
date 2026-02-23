@@ -7,7 +7,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 
 from src.Model.GCS import GCS
 from src.Model.battery import Battery
@@ -256,6 +256,9 @@ def get_resource(id: str) -> Any:
 		return jsonify({"error": "Resource not found."}), 404
 	return jsonify(row_to_resource(row))
 
+@app.route("/")
+def index():
+    return send_from_directory(".", "index.html")
 
 @app.route("/resources/<string:id>", methods=["PUT", "PATCH"])
 def update_resource(id: str) -> Any:
