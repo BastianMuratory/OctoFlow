@@ -4,7 +4,7 @@ async function getDrones() {
     const res = await fetch(`${API}/drones`)
     
     if (!res.ok)
-        throw new Error("Server error")
+        throw new Error("Failed to get drones")
     return res.json()
 }
 
