@@ -17,7 +17,7 @@
     <link href="http://localhost:5000/static/css/style.css" rel="stylesheet" />
 
     <!-- JS -->
-    <script src="http://localhost:5000/static/js/droneCard.js" defer></script>
+    <script src="http://localhost:5000/static/js/cards/droneCard.js" defer></script>
     <script src="http://localhost:5000/static/js/api.js" defer></script>
     <script src="http://localhost:5000/static/js/theme.js" defer></script>
     <script src="http://localhost:5000/static/js/app.js" defer></script>
@@ -42,7 +42,12 @@
     <!-- Drone card template -->
     <template id="drone-card-template">
         <div class="drone-card">
-            <span class="drone-name"></span>
+            <div>
+                <span class="drone-name"></span>
+                <span class="drone-radio-ip"></span>
+                <span class="drone-radio-mesh"></span>
+                <span class="drone-radio-model"></span>
+            </div>
             <button class="btn-delete" title="Delete">
                 <i class="bi bi-trash3"></i>
             </button>

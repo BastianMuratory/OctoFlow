@@ -3,8 +3,11 @@ function renderDroneCard(drone, onDelete) {
     const clone = template.content.cloneNode(true)
 
     clone.querySelector(".drone-name").textContent = drone.name
-    clone.querySelector(".btn-delete").addEventListener("click", () => onDelete(drone.id))
+    clone.querySelector(".drone-radio-ip").textContent = drone.ip ?? "Unknown ip"
+    clone.querySelector(".drone-radio-mesh").textContent = drone.mesh ?? ""
+    clone.querySelector(".drone-radio-model").textContent = drone.model ?? "Unknown model"
 
+    clone.querySelector(".btn-delete").addEventListener("click", () => onDelete(drone.id))
     return clone
 }
 

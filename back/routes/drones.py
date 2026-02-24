@@ -4,10 +4,14 @@ from back.database import get_db
 drones_bp = Blueprint("drones", __name__)
 
 @drones_bp.get("/drones")
-def list_resources() -> Response:
+def list_drones() -> Response:
     with get_db() as conn:
-        rows = conn.execute("SELECT * FROM Drone").fetchall()
-    
+        rows = conn.execute("""
+            SELECT Drone.id, Drone.name, Radio.ip, Radio.model, Radio.mesh
+            FROM Drone
+            LEFT JOIN Radio ON Drone.id_radio = Radio.id
+        """).fetchall()
+        
     return jsonify([dict(r) for r in rows])
 
 @drones_bp.get("/drones/<int:id>")
