@@ -8,4 +8,4 @@ async function handleDelete(id) {
     init()
 }
 
-init()
+window.addEventListener("load", init)

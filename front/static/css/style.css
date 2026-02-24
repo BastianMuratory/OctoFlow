@@ -1,5 +1,10 @@
 /* Themes */
 body {
+    --color-green:  #4ea04a;
+    --color-orange: #ffa800;
+    --color-red:    #f44336;
+    --color-blue:   #0d6efd;
+
     --bg: #f4f5f7;
     --text: #1a1d23;
     --btn-bg: #1a1d23;
@@ -15,6 +20,11 @@ body {
 }
 
 html.dark body {
+    --color-green:  #a9dc76;
+    --color-orange: #fc9867;
+    --color-red:    #ff6188;
+    --color-blue:   #0dcaf0;
+
     --bg: #2e2e2e;
     --text: #e8eaf0;
     --btn-bg: #e8eaf0;
@@ -46,7 +56,7 @@ html.dark body {
 
 /* Create resource button */
 .btn-create {
-    background: var(--create-bg);
+    background: var(--color-green);
     color: var(--create-text);
     border: none;
     border-radius: 8px;
@@ -55,24 +65,24 @@ html.dark body {
 
 .btn-create:hover {
     opacity: .85;
-    background: var(--create-bg);
+    background: var(--color-green);
     color: var(--create-text);
 }
 
 /* Cards grid */
 .drone-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 12px;
 }
 
 /* Drone cards */
 .drone-card {
-    width: 300px;
+    width: 350px;
     height: 200px;
 
     border-style: solid;
-    border: 3px solid green;
+    border-width: 3px;
     border-radius: 10px;
     padding: 16px;
 
@@ -84,8 +94,16 @@ html.dark body {
     transition: border-color .2s;
 }
 
+.drone-card.status-ok      { border-color: var(--color-green) }
+.drone-card.status-warning { border-color: var(--color-orange) }
+.drone-card.status-error   { border-color: var(--color-red) }
+
+.drone-status.status-ok      { background: var(--color-green) }
+.drone-status.status-warning { background: var(--color-orange) }
+.drone-status.status-error   { background: var(--color-red) }
+
 .drone-card:hover {
-    border-color: var(--primary);
+    border-color: var(--color-blue);
 }
 
 .drone-card-main-row {
@@ -102,7 +120,7 @@ html.dark body {
 .drone-status {
     width: 15px;
     height: 15px;
-    background: green;
+    color: grey;
     border-radius: 50%;
 }
 

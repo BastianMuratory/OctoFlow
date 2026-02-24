@@ -7,7 +7,7 @@ drones_bp = Blueprint("drones", __name__)
 def list_drones() -> Response:
     with get_db() as conn:
         rows = conn.execute("""
-            SELECT Drone.id, Drone.name, Radio.ip, Radio.model, Radio.mesh
+            SELECT Drone.id, Drone.name, Drone.status, Radio.ip, Radio.model, Radio.mesh
             FROM Drone
             LEFT JOIN Radio ON Drone.id_radio = Radio.id
         """).fetchall()
