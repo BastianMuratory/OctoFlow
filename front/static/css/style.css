@@ -47,7 +47,7 @@ html.dark body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background .2s, color .2s;
+    transition: opacity .2s;
 }
 
 .btn-theme:hover {
@@ -56,16 +56,19 @@ html.dark body {
 
 /* Create resource button */
 .btn-create {
-    background: var(--color-green);
-    color: var(--text-inverted);
     height: 36px;
-    border: none;
+    background-color: transparent;
+    color: var(--color-green);
+    border-color: var(--color-green);
+    border-width: 2px;
     border-radius: 8px;
-    transition: background .2s, color .2s, opacity .2s;
+    border-style: solid;
+    transition: background-color .2s, color .2s, opacity .2s;
 }
 
 .btn-create:hover {
-    opacity: .85;
+    color: var(--text-inverted);
+    background-color: var(--color-green);
 }
 
 /* Cards grid */
