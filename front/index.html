@@ -27,11 +27,9 @@
     <div class="d-flex align-items-center gap-3 p-3">
         <img src="http://localhost:5000/static/img/OctoFlow_logo.png" alt="OctoFlow" height="36" />
         <input type="text" class="form-control w-auto" placeholder="Search..." />
-        <button class="btn btn-outline-secondary" title="Filter">
-            <i class="bi bi-sliders2"></i>
-        </button>
-        <button class="btn btn-create">Create resource</button>
-        <button id="themeToggle" class="btn btn-theme" title="Toggle theme">
+
+        <button class="btn-create">Create resource</button>
+        <button id="themeToggle" class="btn-theme" title="Toggle theme">
             <i class="bi bi-moon-fill"></i>
         </button>
     </div>
@@ -43,14 +41,26 @@
     <template id="drone-card-template">
         <div class="drone-card">
             <div class="drone-card-main-row">
-                <div class="drone-name"></div>
-                <div class="drone-status"></div>
-                <img src="http://localhost:5000/static/img/drone_logo.png" alt="Drone image" height="36"/>
+                <div class="drone-card-left">
+                    <div class="drone-card-name-row">
+                        <div class="drone-name"></div>
+                        <div class="drone-status"></div>
+                    </div>
+                    <div class="drone-ready-to-fly">Ready to fly !</div>
+                </div>
+                <img src="http://localhost:5000/static/img/drone_logo.png" alt="Drone image" height="42" />
             </div>
-            
-            <div class="drone-radio-ip"></div>
-            <div class="drone-radio-mesh"></div>
-            <div class="drone-radio-model"></div>
+
+            <div class="drone-card-main-info-grid">
+                <div class="drone-radio-mesh"><span class="label">Mesh:</span> <span class="value"></span></div>
+                <div class="drone-radio-ip"><span class="label">IP:</span> <span class="value"></span></div>
+                <div class="drone-radio-waterproof"><span class="label">Étanche:</span> <input type="checkbox"
+                        class="value" disabled /></div>
+                <div class="drone-radio-waterproof"><span class="label">Carte SD Z3:</span> <input type="checkbox"
+                        class="value" disabled /></div>
+            </div>
+
+            <div class="drone-details"></div>
 
             <button class="btn-delete" title="Delete">
                 <i class="bi bi-trash3"></i>
@@ -58,4 +68,5 @@
         </div>
     </template>
 </body>
+
 </html>

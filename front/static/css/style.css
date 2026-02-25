@@ -1,16 +1,17 @@
 /* Themes */
 body {
-    --color-green:  #4ea04a;
+    --color-green: #4ea04a;
     --color-orange: #ffa800;
-    --color-red:    #f44336;
-    --color-blue:   #0d6efd;
+    --color-red: #f44336;
+    --color-blue: #0d6efd;
 
     --bg: #f4f5f7;
     --text: #1a1d23;
+    --text-subtle: #666666;
+    --text-inverted: #ffffff;
     --btn-bg: #1a1d23;
     --btn-text: #ffffff;
-    --create-bg: #4ea04a;
-    --create-text: #ffffff;
+    --brightness-when-emphasized: 0.85;
 
     margin: 0;
     background: var(--bg);
@@ -20,23 +21,24 @@ body {
 }
 
 html.dark body {
-    --color-green:  #a9dc76;
+    --color-green: #a9dc76;
     --color-orange: #fc9867;
-    --color-red:    #ff6188;
-    --color-blue:   #0dcaf0;
+    --color-red: #ff6188;
+    --color-blue: #0dcaf0;
 
     --bg: #2e2e2e;
     --text: #e8eaf0;
+    --text-subtle: #aaaaaa;
+    --text-inverted: #0d0f14;
     --btn-bg: #e8eaf0;
     --btn-text: #0d0f14;
-    --create-bg: #a9dc76;
-    --create-text: #0d0f14;
+    --brightness-when-emphasized: 1.15;
 }
 
 /* Theme toggle button */
 .btn-theme {
     background: var(--btn-bg);
-    color: var(--btn-text);
+    color: var(--text-inverted);
     border: none;
     border-radius: 8px;
     width: 36px;
@@ -50,14 +52,13 @@ html.dark body {
 
 .btn-theme:hover {
     opacity: .85;
-    background: var(--btn-bg);
-    color: var(--btn-text);
 }
 
 /* Create resource button */
 .btn-create {
     background: var(--color-green);
-    color: var(--create-text);
+    color: var(--text-inverted);
+    height: 36px;
     border: none;
     border-radius: 8px;
     transition: background .2s, color .2s, opacity .2s;
@@ -65,8 +66,6 @@ html.dark body {
 
 .btn-create:hover {
     opacity: .85;
-    background: var(--color-green);
-    color: var(--create-text);
 }
 
 /* Cards grid */
@@ -79,37 +78,67 @@ html.dark body {
 /* Drone cards */
 .drone-card {
     width: 350px;
-    height: 200px;
+    height: auto;
+    min-height: 250px;
 
     border-style: solid;
     border-width: 3px;
     border-radius: 10px;
     padding: 16px;
+    gap: 15px;
 
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
     flex-direction: column;
 
-    transition: border-color .2s;
+    transition: border-color .2s, filter.2s;
 }
 
-.drone-card.status-ok      { border-color: var(--color-green) }
-.drone-card.status-warning { border-color: var(--color-orange) }
-.drone-card.status-error   { border-color: var(--color-red) }
+.drone-card.status-ok {
+    border-color: var(--color-green)
+}
 
-.drone-status.status-ok      { background: var(--color-green) }
-.drone-status.status-warning { background: var(--color-orange) }
-.drone-status.status-error   { background: var(--color-red) }
+.drone-card.status-warning {
+    border-color: var(--color-orange)
+}
+
+.drone-card.status-error {
+    border-color: var(--color-red)
+}
+
+.drone-status.status-ok {
+    background: var(--color-green)
+}
+
+.drone-status.status-warning {
+    background: var(--color-orange)
+}
+
+.drone-status.status-error {
+    background: var(--color-red)
+}
 
 .drone-card:hover {
-    border-color: var(--color-blue);
+    filter: brightness(var(--brightness-when-emphasized));
 }
 
 .drone-card-main-row {
     display: flex;
-    align-items: center;
-    gap: 30px
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.drone-card-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.drone-card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .drone-name {
@@ -122,6 +151,27 @@ html.dark body {
     height: 15px;
     color: grey;
     border-radius: 50%;
+}
+
+.drone-ready-to-fly {
+    font-size: 14px;
+    color: var(--text-subtle);
+}
+
+.drone-card-main-info-grid {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-direction: column;
+}
+
+.label {
+    font-weight: 600
+}
+
+.drone-details {
+    font-size: 14px;
+    color: var(--text-subtle);
 }
 
 .btn-delete {

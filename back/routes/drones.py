@@ -7,10 +7,11 @@ drones_bp = Blueprint("drones", __name__)
 def list_drones() -> Response:
     with get_db() as conn:
         rows = conn.execute("""
-            SELECT Drone.id, Drone.name, Drone.status, Radio.ip, Radio.model, Radio.mesh
-            FROM Drone
-            LEFT JOIN Radio ON Drone.id_radio = Radio.id
-        """).fetchall()
+            Select Drone.id, Drone.name, Drone.status, Drone.is_waterproof, Drone.has_encoder_sd_card, Drone.details, Radio.ip, Radio.mesh, Payload.is_ir_boson_plus
+            From Drone
+            Left Join Radio on Drone.id_radio = Radio.id
+            Left join Payload on Drone.id_payload = Payload.id
+            """).fetchall()
         
     return jsonify([dict(r) for r in rows])
 

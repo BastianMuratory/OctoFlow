@@ -17,9 +17,11 @@ function renderDroneCard(drone, onDelete) {
     dot.classList.add(cls)
 
     clone.querySelector(".drone-name").textContent = "Drone " + drone.name.toUpperCase()
-    clone.querySelector(".drone-radio-ip").textContent = "IP: " + (drone.ip ?? "Unknown")
-    clone.querySelector(".drone-radio-mesh").textContent = "Mesh: " + (drone.mesh ?? "")
-    clone.querySelector(".drone-radio-model").textContent = "Model radio: " + (drone.model ?? "Unknown")
+    clone.querySelector(".drone-radio-ip .value").textContent = drone.ip ?? "Unknown"
+    clone.querySelector(".drone-radio-mesh .value").textContent = drone.mesh ?? ""
+    clone.querySelector(".drone-radio-waterproof .value").checked = Boolean(drone.is_waterproof)
+    clone.querySelector(".drone-details").textContent = drone.details ?? ""
+    clone.querySelector(".drone-ready-to-fly").style.display = (drone.status === 1)
 
     clone.querySelector(".btn-delete").addEventListener("click", () => onDelete(drone.id))
 
