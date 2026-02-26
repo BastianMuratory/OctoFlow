@@ -5,7 +5,7 @@ function statusClass(status) {
     return ""
 }
 
-function renderDroneCard(drone, onDelete) {
+function renderDroneCard(drone) {
     const template = document.getElementById("drone-card-template")
     const clone = template.content.cloneNode(true)
 
@@ -23,14 +23,12 @@ function renderDroneCard(drone, onDelete) {
     clone.querySelector(".drone-details").textContent = drone.details ?? ""
     clone.querySelector(".drone-ready-to-fly").style.display = (drone.status === 1)
 
-    clone.querySelector(".btn-delete").addEventListener("click", () => onDelete(drone.id))
-
     return clone
 }
-function renderDrones(drones, onDelete) {
+function renderDrones(drones) {
     const grid = document.getElementById("drone-grid")
     grid.innerHTML = ""
 
     for (const drone of drones)
-        grid.appendChild(renderDroneCard(drone, onDelete))
+        grid.appendChild(renderDroneCard(drone))
 }

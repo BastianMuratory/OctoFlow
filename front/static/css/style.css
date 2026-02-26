@@ -80,7 +80,7 @@ html.dark body {
 
 /* Drone cards */
 .drone-card {
-    width: 350px;
+    width: 330px;
     height: auto;
     min-height: 250px;
 
@@ -198,11 +198,34 @@ input[type="checkbox"]:checked::after {
 }
 
 input[type="checkbox"]:disabled {
-  border-color: var(--text-subtle);
+    border-color: var(--text-subtle);
 }
 
 input[type="checkbox"]:disabled:checked::after {
-  color: var(--text-subtle);
+    color: var(--text-subtle);
+}
+
+.drone-card-actions {
+    display: flex;
+    justify-content: space-evenly;
+    width: 100%;
+    gap: 8px;
+}
+
+.btn-action {
+    background: transparent;
+    color: var(--text);
+    border: 2px solid var(--text);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+}
+
+.btn-action:hover {
+    background-color: var(--text);
+    color: var(--text-inverted);
 }
 
 .btn-delete {

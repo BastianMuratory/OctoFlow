@@ -1,11 +1,6 @@
 async function init() {
     const drones = await getDrones()
-    renderDrones(drones, handleDelete)
-}
-
-async function handleDelete(id) {
-    await deleteDrone(id)
-    init()
+    renderDrones(drones)
 }
 
 window.addEventListener("load", init)
