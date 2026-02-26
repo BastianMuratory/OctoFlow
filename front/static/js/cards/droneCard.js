@@ -21,7 +21,8 @@ function renderDroneCard(drone) {
     clone.querySelector(".drone-radio-mesh .value").textContent = drone.mesh ?? ""
     clone.querySelector(".drone-radio-waterproof .value").checked = Boolean(drone.is_waterproof)
     clone.querySelector(".drone-details").textContent = drone.details ?? ""
-    clone.querySelector(".drone-ready-to-fly").style.display = (drone.status === 1)
+    clone.querySelector(".drone-ready-to-fly").style.display = (drone.status === 1 ? "" : "none")
+    console.log(clone.querySelector(".drone-ready-to-fly").style.display, drone.status)
 
     return clone
 }
