@@ -127,21 +127,21 @@ html.dark body {
 
 .drone-card-main-row {
     display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  width: 100%;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .drone-card-left {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .drone-card-name-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .drone-name {
@@ -175,6 +175,34 @@ html.dark body {
 .drone-details {
     font-size: 14px;
     color: var(--text-subtle);
+}
+
+input[type="checkbox"] {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--text);
+    border-radius: 3px;
+    background: transparent;
+    cursor: default;
+    position: relative;
+}
+
+input[type="checkbox"]:checked::after {
+    content: "✓";
+    position: absolute;
+    top: -3px;
+    left: 2px;
+    font-size: 13px;
+    color: var(--text);
+}
+
+input[type="checkbox"]:disabled {
+  border-color: var(--text-subtle);
+}
+
+input[type="checkbox"]:disabled:checked::after {
+  color: var(--text-subtle);
 }
 
 .btn-delete {
