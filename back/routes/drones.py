@@ -7,7 +7,10 @@ drones_bp = Blueprint("drones", __name__)
 def list_drones() -> Response:
     with get_db() as conn:
         rows = conn.execute("""
-            Select Drone.id, Drone.name, Drone.status, Drone.is_waterproof, Drone.has_encoder_sd_card, Drone.details, Radio.ip, Radio.mesh, Payload.is_ir_boson_plus
+            Select Drone.id, Drone.name, Drone.status, Drone.details, Drone.is_waterproof, Drone.has_pix_double_layer_support, Drone.is_c5_c6_compliant, Drone.has_encoder, Drone.has_encoder_sd_card, Drone.encoder_version,
+            Radio.ip, Radio.mesh, Radio.model, Radio.is_drone_config, Radio.encryption_type, Radio.encryption_key, Radio.min_frequency, Radio.max_frequency,
+            Payload.reverse_mounting, Payload.has_eo, Payload.has_ir, Payload.eo_info, Payload.ir_info, Payload.ir_frequency, Payload.is_ir_boson_plus, Payload.ir_sensitivity
+            
             From Drone
             Left Join Radio on Drone.id_radio = Radio.id
             Left join Payload on Drone.id_payload = Payload.id
