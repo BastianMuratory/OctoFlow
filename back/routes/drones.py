@@ -18,37 +18,86 @@ def list_drones() -> Response:
         
     return jsonify([dict(r) for r in rows])
 
-@drones_bp.get("/drones/<int:id>")
-def get_drone(id: int) -> Response:
-    with get_db() as conn:
-        row = conn.execute("SELECT * FROM Drone WHERE id = ?", (id,)).fetchone()
-        
-    if row is None:
-        return jsonify({"error": "Drone not found"}), 404
-    
-    return jsonify(dict(row))
-
-@drones_bp.post("/drones")
-def create_drone() -> Response:
-    body = request.get_json()
-    
-    if not body or "name" not in body:
-        return jsonify({"error": "Missing required field: name"}), 400
-    
-    with get_db() as conn:
-        cursor = conn.execute(
-            "INSERT INTO Drone (name, id_radio) VALUES (?, ?)",
-            (body["name"], body.get("id_radio"))
-        )
-        
-    return jsonify({"id": cursor.lastrowid}), 201
 
 @drones_bp.delete("/drones/<int:id>")
 def delete_drone(id: int) -> Response:
     with get_db() as conn:
-        row = conn.execute("SELECT * FROM Drone WHERE id = ?", (id,)).fetchone()        
+        row = conn.execute("SELECT * FROM Drone WHERE id = ?", (id,)).fetchone()
         if row is None:
             return jsonify({"error": "Drone not found"}), 404
         
-        conn.execute("DELETE FROM Drone WHERE id = ?", (id,))        
+        conn.execute("DELETE FROM Drone WHERE id = ?", (id,))
     return jsonify({"message": "Drone deleted"}), 200
+
+
+@drones_bp.put("/drones/<int:id>")
+def update_drone(id: int) -> Response:
+    body = request.get_json()
+    if not body:
+        return jsonify({"error": "Missing body"}), 400
+
+    with get_db() as conn:
+        # Check if drone exist in db
+        row = conn.execute("SELECT * FROM Drone WHERE id = ?", (id,)).fetchone()
+        if row is None:
+            return jsonify({"error": "Drone not found"}), 404
+
+        # Update drone
+        conn.execute("""
+            UPDATE Drone SET
+                status = COALESCE(?, status),
+                is_waterproof = COALESCE(?, is_waterproof),
+                has_pix_double_layer_support = COALESCE(?, has_pix_double_layer_support),
+                is_c5_c6_compliant = COALESCE(?, is_c5_c6_compliant),
+                has_encoder = COALESCE(?, has_encoder),
+                has_encoder_sd_card = COALESCE(?, has_encoder_sd_card),
+                encoder_version = COALESCE(?, encoder_version)
+            WHERE id = ?
+        """, (
+            body.get("status"),
+            body.get("waterproof"),
+            body.get("pix"),
+            body.get("ce"),
+            body.get("encoder"),
+            body.get("sd"),
+            body.get("encoderVersion"),
+            id
+        ))
+
+        # Update Radio
+        conn.execute("""
+            UPDATE Radio SET
+                ip = COALESCE(?, ip),
+                mesh = COALESCE(?, mesh),
+                encryption_key = COALESCE(?, encryption_key),
+                encryption_type = COALESCE(?, encryption_type),
+                model = COALESCE(?, model)
+            WHERE id = (SELECT id_radio FROM Drone WHERE id = ?)
+        """, (
+            body.get("ip"),
+            body.get("mesh"),
+            body.get("password"),
+            body.get("aes"),
+            body.get("model"),
+            id
+        ))
+
+        # Update Payload
+        conn.execute("""
+            UPDATE Payload SET
+                has_eo = COALESCE(?, has_eo),
+                has_ir = COALESCE(?, has_ir),
+                eo_info = COALESCE(?, eo_info),
+                ir_info = COALESCE(?, ir_info),
+                reverse_mounting = COALESCE(?, reverse_mounting)
+            WHERE id = (SELECT id_payload FROM Drone WHERE id = ?)
+        """, (
+            body.get("eo"),
+            body.get("ir"),
+            body.get("eoInfo"),
+            body.get("irInfo"),
+            body.get("payloadMount"),
+            id
+        ))
+
+    return jsonify({"message": "Drone updated"}), 200

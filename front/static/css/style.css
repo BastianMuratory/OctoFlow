@@ -4,7 +4,7 @@ body {
     --color-orange: #ffa800;
     --color-red: #f44336;
     --color-blue: #0d6efd;
-
+    --border: #cccccc;
     --bg: #f4f5f7;
     --text: #1a1d23;
     --text-subtle: #666666;
@@ -12,7 +12,6 @@ body {
     --btn-bg: #1a1d23;
     --btn-text: #ffffff;
     --brightness-when-emphasized: 0.85;
-
     margin: 0;
     background: var(--bg);
     color: var(--text);
@@ -25,7 +24,7 @@ html.dark body {
     --color-orange: #fc9867;
     --color-red: #ff6188;
     --color-blue: #0dcaf0;
-
+    --border: #444444;
     --bg: #2e2e2e;
     --text: #e8eaf0;
     --text-subtle: #aaaaaa;
@@ -37,7 +36,7 @@ html.dark body {
 
 /* Label */
 .label {
-    font-weight: 600
+    font-weight: 600;
 }
 
 /* Checkbox */
@@ -115,12 +114,201 @@ input[type="checkbox"]:disabled:checked::after {
 /* Panel overlay */
 #panel-overlay {
     position: fixed;
-    top:0; left:0;
+    top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 900;
 }
 
 #panel-overlay.hidden {
     display: none;
+}
+
+/* Detail panel */
+#detail-panel {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 16px;
+    min-width: 400px;
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+#detail-panel.hidden { display: none; }
+
+#detail-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+#detail-header-left {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+#detail-photo {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+#detail-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#detail-title { margin: 0; font-size: 1.3em; font-weight: 600; }
+#detail-description { margin: 0; font-size: 0.95em; color: var(--text-subtle); }
+
+#btn-detail-close {
+    background: transparent;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    color: var(--text);
+}
+
+/* Tab bar */
+#detail-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+}
+
+.detail-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text-subtle);
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.detail-tab:hover:not(.disabled) {
+    color: var(--text);
+}
+
+.detail-tab.active {
+    color: var(--text);
+    border-bottom-color: var(--color-blue);
+    font-weight: 500;
+}
+
+.detail-tab.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* Tab placeholder */
+.tab-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    height: 200px;
+    color: var(--text-subtle);
+    font-size: 0.9rem;
+}
+
+.tab-placeholder i {
+    font-size: 2rem;
+    opacity: 0.4;
+}
+
+/* Footer */
+#detail-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.footer-edit-mode {
+    display: flex;
+    gap: 8px;
+}
+
+/* Buttons */
+.btn-action,
+.btn-edit,
+.btn-delete,
+.btn-save,
+.btn-cancel-edit {
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--text-subtle);
+    background: transparent;
+    color: var(--text);
+    transition: background-color .2s, color .2s;
+}
+
+.btn-action:hover { background-color: var(--text-subtle); color: var(--text-inverted); }
+
+.btn-edit { border-color: var(--color-blue); color: var(--color-blue); }
+.btn-edit:hover { background-color: var(--color-blue); color: var(--text-inverted); }
+
+.btn-delete { border-color: var(--color-red); color: var(--color-red); }
+.btn-delete:hover { background-color: var(--color-red); color: var(--text-inverted); }
+
+.btn-save { border-color: var(--color-green); color: var(--color-green); }
+.btn-save:hover { background-color: var(--color-green); color: var(--text-inverted); }
+
+.btn-cancel-edit { border-color: var(--text-subtle); color: var(--text-subtle); }
+.btn-cancel-edit:hover { background-color: var(--text-subtle); color: var(--text-inverted); }
+
+/* Unsaved changes dialog */
+.unsaved-dialog {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    z-index: 10;
+}
+
+.unsaved-dialog-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 320px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.unsaved-dialog-box p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.unsaved-dialog-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
 }

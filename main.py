@@ -10,8 +10,8 @@ PORT = 5000
 
 # Flask app
 app = Flask(__name__, static_folder="front/static")
+CORS(app) # CORS must be enabled before registering blueprints
 app.register_blueprint(drones_bp)
-CORS(app)
 
 # Serve index.html by default
 @app.route("/")

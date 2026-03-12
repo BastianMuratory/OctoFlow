@@ -3,7 +3,11 @@
         <h5>Système</h5>
         <div class="detail-grid">
             <div>Étanche: <input type="checkbox" id="waterproof" disabled></div>
-            <div>Status: <span id="status"></span></div>
+            <div>Status: <select id="status" class="detail-input" disabled>
+                    <option value="-1">Hors service</option>
+                    <option value="0">En maintenance</option>
+                    <option value="1">Opérationnel</option>
+                </select></div>
             <div>Support de PIX: <input type="checkbox" id="pix" disabled></div>
             <div>Marquage C5/C6: <input type="checkbox" id="ce" disabled></div>
         </div>
@@ -12,14 +16,18 @@
     <div class="detail-section">
         <h5>Configuration Radio</h5>
         <div class="detail-grid">
-            <div>IP: <span id="ip"></span></div>
-            <div>Mesh: <span id="mesh"></span></div>
-            <div>Clé de chiffrement: <input type="password" id="password" disabled>
-                <button id="toggle-password" class="btn-action">*</button>
+            <div>IP: <input type="text" id="ip" class="detail-input" disabled></div>
+            <div>Mesh: <input type="text" id="mesh" class="detail-input" disabled></div>
+            <div>Clé de chiffrement: <input type="password" id="password" class="detail-input" disabled>
+                <button id="toggle-password" class="btn-action"><i class="bi bi-eye"></i></button>
             </div>
-            <div>Type de chiffrement: <span id="aes"></span></div>
-            <div>Modèle: <span id="model"></span></div>
-            <div>Plage de fréquences: <span id="frequency"></span></div>
+            <div>Type de chiffrement: <select id="aes" class="detail-input" disabled>
+                    <option value="0">Aucun</option>
+                    <option value="1">AES-128</option>
+                    <option value="2">AES-256</option>
+                </select></div>
+            <div>Modèle: <input type="text" id="model" class="detail-input" disabled></div>
+            <div>Plage de fréquences: <input type="text" id="frequency" class="detail-input" disabled></div>
         </div>
     </div>
 
@@ -30,10 +38,10 @@
             <div>Caméra EO: <input type="checkbox" id="eo" disabled></div>
             <div>Caméra IR: <input type="checkbox" id="ir" disabled></div>
             <div>Carte SD: <input type="checkbox" id="sd" disabled></div>
-            <div>Version encodeur: <span id="encoder-version"></span></div>
-            <div>Infos EO: <span id="eo-info"></span></div>
-            <div>Infos IR: <span id="ir-info"></span></div>
-            <div>Montage payload: <span id="payload-mount"></span></div>
+            <div>Version encodeur: <input type="text" id="encoder-version" class="detail-input" disabled></div>
+            <div>Infos EO: <input type="text" id="eo-info" class="detail-input" disabled></div>
+            <div>Infos IR: <input type="text" id="ir-info" class="detail-input" disabled></div>
+            <div>Montage payload: <input type="checkbox" id="payload-mount" disabled></div>
         </div>
     </div>
 </div>
