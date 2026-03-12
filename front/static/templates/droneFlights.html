@@ -1,11 +1,31 @@
 <div class="flights-container">
-    <div class="flights-header">
-        <span class="flights-count">0 vol(s)</span>
-    </div>
-    <div class="flights-list">
-        <div class="flights-empty">
-            <i class="bi bi-airplane"></i>
-            <p>Aucun vol enregistré</p>
-        </div>
-    </div>
+    <table class="flights-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Pilote</th>
+                <th>Temps de vol</th>
+                <th>Temps cumulé</th>
+                <th>Raison du vol</th>
+                <th>Remarques</th>
+            </tr>
+        </thead>
+        <tbody class="flights-body"></tbody>
+        <tfoot>
+            <tr class="flights-add-row">
+                <td></td>
+                <td><input type="text" class="flight-pilot detail-input" placeholder="Pilote" /></td>
+                <td><input type="text" class="flight-duration detail-input" placeholder="HH:MM:SS" /></td>
+                <td></td>
+                <td><input type="text" class="flight-purpose detail-input" placeholder="Raison du vol" /></td>
+                <td><input type="text" class="flight-comments detail-input" placeholder="Remarques" /></td>
+            </tr>
+            <tr>
+                <td colspan="6" style="padding: 6px 12px; text-align: right;">
+                    <button class="btn-action btn-save btn-add-flight">+ Ajouter</button>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+    <div class="flights-count">0 vol(s)</div>
 </div>

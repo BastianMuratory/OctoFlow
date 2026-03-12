@@ -1,5 +1,6 @@
 import { updateDrone } from "../api.js"
 import { getTemplate } from "../templateLoader.js"
+import { fillDroneFlights } from "./droneFlights.js"
 
 let overlay, panel, body, title, description
 let isEditMode = false
@@ -27,7 +28,7 @@ export function initDetailPanel() {
     })
 }
 
-export function openDetailPanel(type, data) {
+export function openPanel(type, data, tab = "details") {
     currentType = type
     currentData = data
 
@@ -37,7 +38,7 @@ export function openDetailPanel(type, data) {
 
     isEditMode = false
     renderFooter()
-    showTab("details")
+    showTab(tab)
 
     overlay.classList.remove("hidden")
     panel.classList.remove("hidden")
@@ -81,11 +82,7 @@ function showTab(tabId) {
                 toggleBtn.querySelector("i").className = isHidden ? "bi bi-eye-slash" : "bi bi-eye"
             })
         } else if (tabId === "flights") {
-            body.innerHTML = `
-                <div class="tab-placeholder">
-                    <i class="bi bi-airplane"></i>
-                    <p>Aucun vol enregistré</p>
-                </div>`
+            fillDroneFlights(body, currentData.id)
         } else if (tabId === "operations") {
             body.innerHTML = `
                 <div class="tab-placeholder">

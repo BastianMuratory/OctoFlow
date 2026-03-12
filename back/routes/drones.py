@@ -101,3 +101,24 @@ def update_drone(id: int) -> Response:
         ))
 
     return jsonify({"message": "Drone updated"}), 200
+
+@drones_bp.get("/drones/<int:id>/flights")
+def get_flights(id: int) -> Response:
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM Flights WHERE id_drone = ? ORDER BY date DESC", (id,)
+        ).fetchall()
+        return jsonify([dict(r) for r in rows])
+
+@drones_bp.post("/drones/<int:id>/flights")
+def create_flight(id: int) -> Response:
+    body = request.get_json()
+    if not body:
+        return jsonify({"error": "Missing body"}), 400
+    with get_db() as conn:
+        cursor = conn.execute(
+            """INSERT INTO Flights (id_drone, date, pilot, duration, purpose, comments)
+               VALUES (?, strftime('%s', 'now'), ?, ?, ?, ?)""",
+            (id, body.get("pilot"), body.get("duration"), body.get("purpose"), body.get("comments"))
+        )
+        return jsonify({"id": cursor.lastrowid}), 201

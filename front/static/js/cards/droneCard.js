@@ -1,5 +1,5 @@
 import { getTemplate } from "../templateLoader.js"
-import { openDetailPanel } from "../components/detailPanel.js"
+import { openPanel } from "../components/detailPanel.js"
 
 export function renderDrones(drones) {
     const grid = document.getElementById("drone-grid")
@@ -27,9 +27,17 @@ function renderDroneCard(drone) {
     card.querySelector(".drone-details").textContent = drone.details ?? ""
     card.querySelector(".drone-ready-to-fly").style.display = (drone.status === 1 ? "" : "none")
 
-    // Send event to open the details panel when button is clicked
+    // Send event to open the panel when button is clicked
     card.querySelector(".btn-details").addEventListener("click", () => {
-        openDetailPanel("drone", drone)
+        openPanel("drone", drone)
+    })
+
+    card.querySelector(".btn-flights").addEventListener("click", () => {
+        openPanel("drone", drone, "flights")
+    })
+
+    card.querySelector(".btn-operations").addEventListener("click", () => {
+        openPanel("drone", drone, "operations")
     })
 
     return card
