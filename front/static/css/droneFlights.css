@@ -1,107 +1,107 @@
 .flights-container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .flights-count {
-  font-size: 0.85rem;
-  color: var(--text-subtle);
-  text-align: right;
+    font-size: 0.85rem;
+    color: var(--text-subtle);
+    text-align: right;
 }
 
 .flights-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
 }
 
 .flights-table th,
 .flights-table td {
-  padding: 8px 16px 8px 0;
+    padding: 8px 16px 8px 0;
 }
 
 .flights-table th:first-child,
 .flights-table td:first-child {
-  padding-left: 0;
-  min-width: 90px;
+    padding-left: 0;
+    min-width: 90px;
 }
 
 .flights-table th {
-  text-align: left;
-  border-bottom: 2px solid var(--border) !important;
-  font-weight: 600;
-  color: var(--text-subtle);
-  white-space: nowrap;
+    text-align: left;
+    border-bottom: 2px solid var(--border) !important;
+    font-weight: 600;
+    color: var(--text-subtle);
+    white-space: nowrap;
 }
 
 .flights-table td {
-  border-bottom: 1px solid var(--border) !important;
-  white-space: nowrap;
+    border-bottom: 1px solid var(--border) !important;
+    white-space: nowrap;
 }
 
 .flights-table th:nth-child(5),
 .flights-table td:nth-child(5),
 .flights-table th:nth-child(6),
 .flights-table td:nth-child(6) {
-  white-space: normal;
-  word-break: break-word;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .flights-table tbody tr:hover {
-  background: rgba(128, 128, 128, 0.08);
+    background: rgba(128, 128, 128, 0.08);
 }
 
 .flights-table tfoot td {
-  border-bottom: none !important;
-  border-top: 2px solid var(--border);
+    border-bottom: none !important;
+    border-top: 2px solid var(--border);
 }
 
 .flights-table tfoot tr:not(:first-child) td {
-  border-top: none;
+    border-top: none;
 }
 
 .flights-add-row td {
-  padding: 8px 6px;
+    padding: 8px 6px;
 }
 
 .flights-add-row .detail-input {
-  width: 100%;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text);
-  font-size: 0.875rem;
-  box-sizing: border-box;
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.875rem;
+    box-sizing: border-box;
 }
 
 .flights-add-row .detail-input:focus {
-  outline: none;
-  border-color: var(--color-blue);
+    outline: none;
+    border-color: var(--color-blue);
 }
 
 .flights-table tbody .detail-input {
-  width: 100%;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text);
-  font-size: 0.875rem;
-  box-sizing: border-box;
-  white-space: normal;
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.875rem;
+    box-sizing: border-box;
+    white-space: normal;
 }
 
 .flights-table tbody .detail-input:focus {
-  outline: none;
-  border-color: var(--color-blue);
+    outline: none;
+    border-color: var(--color-blue);
 }
 
 .flights-table tbody textarea.detail-input {
-  resize: vertical;
-  min-height: 32px;
-  line-height: 1.4;
-  white-space: pre-wrap;
-  overflow: hidden;
+    resize: vertical;
+    min-height: 32px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow: hidden;
 }
