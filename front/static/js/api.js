@@ -47,3 +47,15 @@ export async function createFlight(droneId, data) {
         throw new Error("Failed to create flight")
     return res.json()
 }
+
+export async function updateFlight(droneId, flightId, data) {
+    const res = await fetch(`${API}/drones/${droneId}/flights/${flightId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    })
+
+    if (!res.ok)
+        throw new Error("Failed to update flight")
+    return res.json()
+}

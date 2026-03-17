@@ -1,6 +1,6 @@
 import { updateDrone } from "../api.js"
 import { getTemplate } from "../templateLoader.js"
-import { fillDroneFlights } from "./droneFlights.js"
+import { fillDroneFlights, setFlightsEditMode } from "./droneFlights.js"
 
 let overlay, panel, body, title, description
 let isEditMode = false
@@ -120,29 +120,41 @@ function renderFooter() {
 // Edit mode
 function enterEditMode() {
     isEditMode = true
-    setFieldsEditable(true)
+
+    if (activeTab === "flights")
+        setFlightsEditMode(true)
+    else
+        setFieldsEditable(true)
+
     updateTabsLock()
     renderFooter()
 }
 
 function cancelEditMode() {
     isEditMode = false
-    showTab(activeTab)
+
+    if (activeTab === "flights")
+        setFlightsEditMode(false)
+    else
+        showTab(activeTab)
+
     updateTabsLock()
     renderFooter()
 }
 
 async function saveChanges() {
     try {
-        const data = collectFormValues()
-        await updateDrone(currentDroneId, data)
-
+        if (activeTab === "details") {
+            const data = collectFormValues()
+            await updateDrone(currentDroneId, data)
+            setFieldsEditable(false)
+        } else if (activeTab === "flights")
+            setFlightsEditMode(false)
+        
         isEditMode = false
-        setFieldsEditable(false)
         updateTabsLock()
         renderFooter()
 
-        // Refresh list
         window.dispatchEvent(new CustomEvent("drone-updated"))
     } catch (error) {
         console.error("Failed to save:", error)

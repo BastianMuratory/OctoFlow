@@ -80,3 +80,28 @@
   outline: none;
   border-color: var(--color-blue);
 }
+
+.flights-table tbody .detail-input {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.875rem;
+  box-sizing: border-box;
+  white-space: normal;
+}
+
+.flights-table tbody .detail-input:focus {
+  outline: none;
+  border-color: var(--color-blue);
+}
+
+.flights-table tbody textarea.detail-input {
+  resize: vertical;
+  min-height: 32px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow: hidden;
+}

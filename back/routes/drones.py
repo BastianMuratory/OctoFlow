@@ -122,3 +122,31 @@ def create_flight(id: int) -> Response:
             (id, body.get("pilot"), body.get("duration"), body.get("purpose"), body.get("comments"))
         )
         return jsonify({"id": cursor.lastrowid}), 201
+    
+@drones_bp.put("/drones/<int:drone_id>/flights/<int:flight_id>")
+def update_flight(drone_id: int, flight_id: int) -> Response:
+    body = request.get_json()
+    if not body:
+        return jsonify({"error": "Missing body"}), 400
+
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM Flights WHERE id = ? AND id_drone = ?", (flight_id, drone_id)).fetchone()
+        if row is None:
+            return jsonify({"error": "Flight not found"}), 404
+
+        conn.execute("""
+            UPDATE Flights SET
+                pilot = COALESCE(?, pilot),
+                duration = COALESCE(?, duration),
+                purpose = COALESCE(?, purpose),
+                comments = COALESCE(?, comments)
+            WHERE id = ?
+        """, (
+            body.get("pilot"),
+            body.get("duration"),
+            body.get("purpose"),
+            body.get("comments"),
+            flight_id
+        ))
+
+    return jsonify({"message": "Flight updated"}), 200
