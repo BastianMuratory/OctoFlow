@@ -5,8 +5,11 @@ export function renderDrones(drones) {
     const grid = document.getElementById("drone-grid")
     grid.innerHTML = ""
 
-    for (const drone of drones)
-        grid.appendChild(renderDroneCard(drone))
+    drones.forEach((drone, index) => {
+        const card = renderDroneCard(drone)
+        grid.appendChild(card)
+        setTimeout(() => card.classList.add("visible"), index * 50) // Show cards one by one, every 50ms
+    })
 }
 
 function renderDroneCard(drone) {
