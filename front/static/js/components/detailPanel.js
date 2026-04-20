@@ -26,6 +26,12 @@ export function initDetailPanel() {
             showTab(btn.dataset.tab)
         })
     })
+
+    // Close panel when pressing 'escape' key
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !panel.classList.contains("hidden"))
+            handleCloseAttempt()
+    })
 }
 
 export function openPanel(type, data, tab = "details") {
