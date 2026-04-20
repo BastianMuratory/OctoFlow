@@ -1,7 +1,5 @@
-const API = "http://localhost:5000"
-
 export async function getDrones() {
-    const res = await fetch(`${API}/drones`)
+    const res = await fetch("/drones")
 
     if (!res.ok)
         throw new Error("Failed to get drones")
@@ -9,14 +7,14 @@ export async function getDrones() {
 }
 
 export async function deleteDrone(id) {
-    const res = await fetch(`${API}/drones/${id}`, { method: "DELETE" })
+    const res = await fetch(`/drones/${id}`, { method: "DELETE" })
 
     if (!res.ok)
         throw new Error("Failed to delete drone")
 }
 
 export async function updateDrone(id, data) {
-    const res = await fetch(`${API}/drones/${id}`, {
+    const res = await fetch(`/drones/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -29,7 +27,7 @@ export async function updateDrone(id, data) {
 }
 
 export async function getFlights(droneId) {
-    const res = await fetch(`${API}/drones/${droneId}/flights`)
+    const res = await fetch(`/drones/${droneId}/flights`)
 
     if (!res.ok)
         throw new Error("Failed to get flights")
@@ -37,7 +35,7 @@ export async function getFlights(droneId) {
 }
 
 export async function createFlight(droneId, data) {
-    const res = await fetch(`${API}/drones/${droneId}/flights`, {
+    const res = await fetch(`/drones/${droneId}/flights`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -49,7 +47,7 @@ export async function createFlight(droneId, data) {
 }
 
 export async function updateFlight(droneId, flightId, data) {
-    const res = await fetch(`${API}/drones/${droneId}/flights/${flightId}`, {
+    const res = await fetch(`/drones/${droneId}/flights/${flightId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
