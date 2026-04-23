@@ -1,0 +1,108 @@
+.operations-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.operations-count {
+    font-size: 0.85rem;
+    color: var(--text-subtle);
+    text-align: right;
+}
+
+.operations-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.operations-table th,
+.operations-table td {
+    padding: 8px 16px 8px 0;
+}
+
+.operations-table th:first-child,
+.operations-table td:first-child {
+    padding-left: 0;
+    min-width: 90px;
+}
+
+.operations-table th {
+    text-align: left;
+    border-bottom: 2px solid var(--border) !important;
+    font-weight: 600;
+    color: var(--text-subtle);
+    white-space: nowrap;
+}
+
+.operations-table td {
+    border-bottom: 1px solid var(--border) !important;
+    white-space: nowrap;
+}
+
+/* Description et Remarques peuvent wrapper */
+.operations-table th:nth-child(3),
+.operations-table td:nth-child(3),
+.operations-table th:nth-child(7),
+.operations-table td:nth-child(7) {
+    white-space: normal;
+    word-break: break-word;
+}
+
+.operations-table tbody tr:hover {
+    background: rgba(128, 128, 128, 0.08);
+}
+
+.operations-table tfoot td {
+    border-bottom: none !important;
+    border-top: 2px solid var(--border);
+}
+
+.operations-table tfoot tr:not(:first-child) td {
+    border-top: none;
+}
+
+.operations-add-row td {
+    padding: 8px 6px;
+}
+
+.operations-add-row .detail-input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.875rem;
+    box-sizing: border-box;
+}
+
+.operations-add-row .detail-input:focus {
+    outline: none;
+    border-color: var(--color-blue);
+}
+
+.operations-table tbody .detail-input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.875rem;
+    box-sizing: border-box;
+    white-space: normal;
+}
+
+.operations-table tbody .detail-input:focus {
+    outline: none;
+    border-color: var(--color-blue);
+}
+
+.operations-table tbody textarea.detail-input {
+    resize: vertical;
+    min-height: 32px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow: hidden;
+}

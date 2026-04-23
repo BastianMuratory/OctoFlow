@@ -150,3 +150,61 @@ def update_flight(drone_id: int, flight_id: int) -> Response:
         ))
 
     return jsonify({"message": "Flight updated"}), 200
+
+@drones_bp.get("/drones/<int:id>/operations")
+def get_operations(id: int) -> Response:
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM Operation WHERE id_drone = ? ORDER BY date DESC", (id,)
+        ).fetchall()
+        return jsonify([dict(r) for r in rows])
+
+@drones_bp.post("/drones/<int:id>/operations")
+def create_operation(id: int) -> Response:
+    body = request.get_json()
+    if not body:
+        return jsonify({"error": "Missing body"}), 400
+    with get_db() as conn:
+        cursor = conn.execute(
+            """INSERT INTO Operation (id_drone, date, operation_type, description, made_by, reviewed_by, material_cost, comments)
+               VALUES (?, strftime('%s', 'now'), ?, ?, ?, ?, ?, ?)""",
+            (id, body.get("type"), body.get("description"), body.get("done_by"),
+             body.get("validated_by"), body.get("material_cost") or 0, body.get("comments"))
+        )
+        return jsonify({"id": cursor.lastrowid}), 201
+
+@drones_bp.put("/drones/<int:drone_id>/operations/<int:operation_id>")
+def update_operation(drone_id: int, operation_id: int) -> Response:
+    body = request.get_json()
+    if not body:
+        return jsonify({"error": "Missing body"}), 400
+    
+    print(body.get("type"), body.get("description"), body.get("done_by"))
+
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM Operation WHERE id = ? AND id_drone = ?", (operation_id, drone_id)
+        ).fetchone()
+        if row is None:
+            return jsonify({"error": "Operation not found"}), 404
+
+        conn.execute("""
+            UPDATE Operation SET
+                operation_type = COALESCE(?, operation_type),
+                description    = COALESCE(?, description),
+                made_by        = COALESCE(?, made_by),
+                reviewed_by    = COALESCE(?, reviewed_by),
+                material_cost  = COALESCE(?, material_cost),
+                comments       = COALESCE(?, comments)
+            WHERE id = ?
+        """, (
+            body.get("type"),
+            body.get("description"),
+            body.get("done_by"),
+            body.get("validated_by"),
+            body.get("material_cost"),
+            body.get("comments"),
+            operation_id
+        ))
+
+    return jsonify({"message": "Operation updated"}), 200

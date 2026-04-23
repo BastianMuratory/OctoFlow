@@ -17,8 +17,29 @@ export async function fillDroneFlights(parentBody, droneId) {
     content.querySelector(".btn-add-flight").addEventListener("click", () => addFlight(content))
 }
 
-export function setFlightsEditMode(editable) {
+export async function setFlightsEditMode(editable) {
+    if (!editable)
+        await saveAllRows()
     renderRows(editable)
+}
+
+async function saveAllRows() {
+    const rows = _tbody.querySelectorAll("tr[data-id]")
+
+    for (const row of rows) {
+        const flightId = parseInt(row.dataset.id)
+        const pilot = row.querySelector(".edit-pilot").value
+        const duration = row.querySelector(".edit-duration").value
+        const purpose = row.querySelector(".edit-purpose").value
+        const comments = row.querySelector(".edit-comments").value
+
+        const parts = duration.split(":").map(Number)
+        const seconds = (parts[0] * 3600) + (parts[1] * 60) + (parts[2] ?? 0)
+
+        await updateFlight(_droneId, flightId, { pilot, duration: seconds, purpose, comments })
+    }
+    
+    _flights = await getFlights(_droneId)
 }
 
 function renderRows(isEditMode) {
@@ -47,32 +68,6 @@ function renderRows(isEditMode) {
         <td>${f.comments ?? "-"}</td>
       </tr>`
     }).join("")
-
-    if (isEditMode)
-        attachRowListeners()
-}
-
-function attachRowListeners() {
-    _tbody.querySelectorAll("tr[data-id]").forEach(row => {
-        const flightId = parseInt(row.dataset.id)
-
-        row.querySelectorAll(".detail-input").forEach(input => {
-            input.addEventListener("change", async () => {
-                const pilot = row.querySelector(".edit-pilot").value
-                const duration = row.querySelector(".edit-duration").value
-                const purpose = row.querySelector(".edit-purpose").value
-                const comments = row.querySelector(".edit-comments").value
-
-                const parts = duration.split(":").map(Number)
-                const seconds = (parts[0] * 3600) + (parts[1] * 60) + (parts[2] ?? 0)
-
-                await updateFlight(_droneId, flightId, { pilot, duration: seconds, purpose, comments })
-
-                // Refresh local data
-                _flights = await getFlights(_droneId)
-            })
-        })
-    })
 }
 
 function formatDate(ts) {

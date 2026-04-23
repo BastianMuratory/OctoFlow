@@ -57,3 +57,32 @@ export async function updateFlight(droneId, flightId, data) {
         throw new Error("Failed to update flight")
     return res.json()
 }
+
+export async function getOperations(droneId) {
+    const res = await fetch(`/drones/${droneId}/operations`)
+    if (!res.ok)
+        throw new Error("Failed to get operations")
+    return res.json()
+}
+
+export async function createOperation(droneId, data) {
+    const res = await fetch(`/drones/${droneId}/operations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    })
+    if (!res.ok)
+        throw new Error("Failed to create operation")
+    return res.json()
+}
+
+export async function updateOperation(droneId, operationId, data) {
+    const res = await fetch(`/drones/${droneId}/operations/${operationId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    })
+    if (!res.ok)
+        throw new Error("Failed to update operation")
+    return res.json()
+}

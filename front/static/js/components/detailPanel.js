@@ -1,6 +1,7 @@
 import { updateDrone } from "../api.js"
 import { getTemplate } from "../templateLoader.js"
 import { fillDroneFlights, setFlightsEditMode } from "./droneFlights.js"
+import { fillDroneOperations, setOperationsEditMode } from "./droneOperations.js"
 
 let overlay, panel, body, title, description
 let isEditMode = false
@@ -90,14 +91,9 @@ function showTab(tabId) {
         } else if (tabId === "flights") {
             fillDroneFlights(body, currentData.id)
         } else if (tabId === "operations") {
-            body.innerHTML = `
-                <div class="tab-placeholder">
-                    <i class="bi bi-diagram-3"></i>
-                    <p>Aucune opération enregistrée</p>
-                </div>`
+            fillDroneOperations(body, currentData.id)
         }
     }
-    // else ... for other types
 }
 
 // Footer
@@ -129,6 +125,8 @@ function enterEditMode() {
 
     if (activeTab === "flights")
         setFlightsEditMode(true)
+    else if (activeTab === "operations")
+        setOperationsEditMode(true)
     else
         setFieldsEditable(true)
 
@@ -136,11 +134,13 @@ function enterEditMode() {
     renderFooter()
 }
 
-function cancelEditMode() {
+async function cancelEditMode() {
     isEditMode = false
 
     if (activeTab === "flights")
         setFlightsEditMode(false)
+    else if (activeTab === "operations")
+        await setOperationsEditMode(false)
     else
         showTab(activeTab)
 
@@ -156,7 +156,9 @@ async function saveChanges() {
             setFieldsEditable(false)
         } else if (activeTab === "flights")
             setFlightsEditMode(false)
-        
+        else if (activeTab === "operations")
+            await setOperationsEditMode(false)
+
         isEditMode = false
         updateTabsLock()
         renderFooter()

@@ -1,7 +1,7 @@
 const templates = {} // List of all pre-loaded templates
 
 export async function preloadTemplates() {
-    const templatesNames = ["droneCard", "droneDetail", "droneFlights"]
+    const templatesNames = ["droneCard", "droneDetail", "droneFlights", "droneOperations"]
 
     for (const template of templatesNames) {
         const res = await fetch(`/static/templates/${template}.html`)
